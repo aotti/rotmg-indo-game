@@ -36,20 +36,17 @@ class Janken {
         // create embed message
         const embedMessage = new discord_js_1.EmbedBuilder()
             .setTitle('Janken (aduan jari)')
-            .setDescription('waiting other player...')
+            .setDescription('waiting other player\n───────────────────')
             .addFields({
             name: `${firstPlayer.username}`,
             value: `Finger: ${firstPlayer.finger}`
         });
         // reply message
-        // flags [4096] = silent message
         // interact.reply({ embeds: [embedMessage], flags: [4096], ephemeral: true })
         interact.reply({ embeds: [embedMessage], ephemeral: true });
     }
     // join the existing game
     join(interact) {
-        // ### CEK PLAYER SBLM JOIN GAME, UNTUK MENGHINDARI USER YG SAMA
-        // ### CEK PLAYER SBLM JOIN GAME, UNTUK MENGHINDARI USER YG SAMA
         // set player data
         const secondPlayer = {
             id: interact.member.user.id,
@@ -69,8 +66,23 @@ class Janken {
         // push 2nd player to array
         _a.playerArray.push(secondPlayer);
         // compare finger from 1st and 2nd player
-        const [firstPlayerResult, secondPlayerResult] = __classPrivateFieldGet(this, _Janken_instances, "m", _Janken_compareFingers).call(this, interact);
-        // console.log(firstPlayerResult, secondPlayerResult);
+        const compareResult = __classPrivateFieldGet(this, _Janken_instances, "m", _Janken_compareFingers).call(this, interact);
+        _a.playerArray.map((v, i) => { v.result = compareResult[i]; });
+        // create embed result
+        const embedResult = new discord_js_1.EmbedBuilder()
+            .setTitle('Janken (aduan jari)')
+            .setDescription(`game over <:daily_suicid:710973707241390202>\n───────────────────`);
+        for (let player of _a.playerArray) {
+            embedResult.addFields({
+                name: `${player.username} (${player.result})`,
+                value: `Finger: ${player.finger}`
+            });
+        }
+        // display result
+        // flags [4096] = silent message
+        interact.reply({ embeds: [embedResult], flags: [4096] });
+        // reset playerArray
+        _a.playerArray = [];
     }
     // look for a running game
     check(interact) {
@@ -80,7 +92,8 @@ class Janken {
         }
         else if (_a.playerArray.length > 0) {
             // someone is playing
-            interact.reply({ content: 'There is a player waiting :eyes:', ephemeral: true });
+            const waitingPlayer = _a.playerArray[0];
+            interact.reply({ content: `${waitingPlayer.username} is waiting :eyes:`, ephemeral: true });
         }
     }
 }
@@ -95,25 +108,28 @@ _a = Janken, _Janken_instances = new WeakSet(), _Janken_checkPlayerId = function
     }
     const firstFinger = _a.playerArray[0].finger;
     const secondFinger = _a.playerArray[1].finger;
+    const tempResult = [];
     // compare finger
+    // draw condition
     if (firstFinger === secondFinger) {
-        return ['draw', 'draw'];
+        tempResult.push('draw', 'draw');
     }
     else if (firstFinger !== secondFinger) {
         switch (true) {
+            // win condition
             case firstFinger === 'rock' && secondFinger === 'scissor':
-                return ['win', 'lose'];
-            case firstFinger === 'rock' && secondFinger === 'paper':
-                return ['lose', 'win'];
             case firstFinger === 'paper' && secondFinger === 'rock':
-                return ['win', 'lose'];
-            case firstFinger === 'paper' && secondFinger === 'scissor':
-                return ['lose', 'win'];
             case firstFinger === 'scissor' && secondFinger === 'paper':
-                return ['win', 'lose'];
+                tempResult.push('win', 'lose');
+                break;
+            // lose condition
+            case firstFinger === 'rock' && secondFinger === 'paper':
+            case firstFinger === 'paper' && secondFinger === 'scissor':
             case firstFinger === 'scissor' && secondFinger === 'rock':
-                return ['lose', 'win'];
+                tempResult.push('lose', 'win');
+                break;
         }
     }
+    return tempResult;
 };
 Janken.playerArray = [];
