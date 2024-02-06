@@ -34,12 +34,17 @@ class Janken {
         // push player data to array
         _a.playerArray.push(firstPlayer);
         // create embed message
+        const fingerEmoji = firstPlayer.finger === 'rock'
+            ? ':punch:'
+            : firstPlayer.finger === 'paper'
+                ? ':hand_splayed:'
+                : ':v:';
         const embedMessage = new discord_js_1.EmbedBuilder()
             .setTitle('Janken (aduan jari)')
             .setDescription('waiting other player\n───────────────────')
             .addFields({
             name: `${firstPlayer.username}`,
-            value: `Finger: ${firstPlayer.finger}`
+            value: `Finger: ${firstPlayer.finger} ${fingerEmoji}`
         });
         // reply message
         // interact.reply({ embeds: [embedMessage], flags: [4096], ephemeral: true })
@@ -73,9 +78,14 @@ class Janken {
             .setTitle('Janken (aduan jari)')
             .setDescription(`game over <:daily_suicid:710973707241390202>\n───────────────────`);
         for (let player of _a.playerArray) {
+            const fingerEmoji = player.finger === 'rock'
+                ? ':punch:'
+                : player.finger === 'paper'
+                    ? ':hand_splayed:'
+                    : ':v:';
             embedResult.addFields({
                 name: `${player.username} (${player.result})`,
-                value: `Finger: ${player.finger}`
+                value: `Finger: ${player.finger} ${fingerEmoji}`
             });
         }
         // display result

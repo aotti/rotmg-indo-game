@@ -16,7 +16,7 @@ export class Commands {
                 // start game
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'start_janken',
+                    name: 'janken_start',
                     description: 'start the paper-rock-scissor game',
                     options: [
                         {
@@ -35,7 +35,7 @@ export class Commands {
                 // join game
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'join_janken',
+                    name: 'janken_join',
                     description: 'join to existing paper-rock-scissor game',
                     options: [
                         {
@@ -54,7 +54,7 @@ export class Commands {
                 // check game
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'check_janken',
+                    name: 'janken_check',
                     description: 'check if anyone is playing'
                 }
             ]

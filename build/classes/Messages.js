@@ -18,14 +18,14 @@ class Messages {
                 switch (interact.options.getSubcommand()) {
                     // JANKEN GAME
                     // start
-                    case 'start_janken':
+                    case 'janken_start':
                         this.janken.start(interact);
                         break;
-                    case 'check_janken':
-                        this.janken.check(interact);
-                        break;
-                    case 'join_janken':
+                    case 'janken_join':
                         this.janken.join(interact);
+                        break;
+                    case 'janken_check':
+                        this.janken.check(interact);
                         break;
                 }
                 break;
