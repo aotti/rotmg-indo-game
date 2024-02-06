@@ -1,3 +1,4 @@
+// command types
 type SubCommandOptionsType = {
     type: number;
     name: string;
@@ -22,4 +23,12 @@ type CommandsType = {
     options?: SubCommandsType[];
 }
 
-export { CommandsType }
+// janken types
+type JankenPlayerType = {
+    id: number;
+    username: string;
+    finger: string;
+    result: string | null;
+}
+
+export { CommandsType, JankenPlayerType }
