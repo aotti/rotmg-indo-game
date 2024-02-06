@@ -24,6 +24,9 @@ class Messages {
                     case 'check_janken':
                         this.janken.check(interact);
                         break;
+                    case 'join_janken':
+                        this.janken.join(interact);
+                        break;
                 }
                 break;
         }
