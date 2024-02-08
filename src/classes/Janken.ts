@@ -62,22 +62,9 @@ export class Janken {
         // all stuff checked and no error found
         // push player data to array
         Janken.playerArray.push(firstPlayer)
-        // create embed message
-        const fingerEmoji = firstPlayer.finger === 'rock' 
-        ? ':punch:' 
-        : firstPlayer.finger === 'paper'
-            ? ':hand_splayed:'
-            : ':v:'
-        const embedMessage = new EmbedBuilder()
-            .setTitle('Janken (aduan jari)')
-            .setDescription('waiting other player\n───────────────────')
-            .addFields({
-                name: `${firstPlayer.username}`,
-                value: `Finger: ${firstPlayer.finger} ${fingerEmoji}`
-            })
         // reply message
-        // interact.reply({ embeds: [embedMessage], flags: [4096], ephemeral: true })
-        interact.reply({ embeds: [embedMessage], ephemeral: true })
+        // for everyone but silent - flags [4096]
+        interact.reply({ content: `${firstPlayer.username} waiting a challenger :sunglasses:`, flags: [4096] })
     }
 
     // join the existing game

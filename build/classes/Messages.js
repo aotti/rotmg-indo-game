@@ -19,12 +19,15 @@ class Messages {
                     // JANKEN GAME
                     // start
                     case 'janken_start':
+                        console.log(interact.member.nickname, '> starting janken_start command');
                         this.janken.start(interact);
                         break;
                     case 'janken_join':
+                        console.log(interact.member.nickname, '> starting janken_join command');
                         this.janken.join(interact);
                         break;
                     case 'janken_check':
+                        console.log(interact.member.nickname, '> starting janken_check command');
                         this.janken.check(interact);
                         break;
                 }
