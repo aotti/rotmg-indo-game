@@ -21,13 +21,27 @@ export class Commands {
                     options: [
                         {
                             type: ApplicationCommandOptionType.String,
+                            name: 'mode',
+                            description: 'janken mode, advanced has more finger options',
+                            required: true,
+                            choices: [
+                                { name: 'Normal', value: 'normal' },
+                                { name: 'Advanced', value: 'advanced' }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.String,
                             name: 'finger',
                             description: 'the type of finger to be used',
                             required: true,
                             choices: [
                                 { name: 'Paper', value: 'Paper' },
                                 { name: 'Rock', value: 'Rock' },
-                                { name: 'Scissor', value: 'Scissor' }
+                                { name: 'Scissor', value: 'Scissor' },
+                                { name: 'Sponge (advanced)', value: 'Sponge' },
+                                { name: 'Fire (advanced)', value: 'Fire' },
+                                { name: 'Water (advanced)', value: 'Water' },
+                                { name: 'Air (advanced)', value: 'Air' }
                             ]
                         }
                     ]
@@ -40,13 +54,27 @@ export class Commands {
                     options: [
                         {
                             type: ApplicationCommandOptionType.String,
+                            name: 'mode',
+                            description: 'janken mode, advanced has more finger options',
+                            required: true,
+                            choices: [
+                                { name: 'Normal', value: 'normal' },
+                                { name: 'Advanced', value: 'advanced' }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.String,
                             name: 'finger',
                             description: 'the type of finger to be used',
                             required: true,
                             choices: [
                                 { name: 'Paper', value: 'Paper' },
                                 { name: 'Rock', value: 'Rock' },
-                                { name: 'Scissor', value: 'Scissor' }
+                                { name: 'Scissor', value: 'Scissor' },
+                                { name: 'Sponge (advanced)', value: 'Sponge' },
+                                { name: 'Fire (advanced)', value: 'Fire' },
+                                { name: 'Water (advanced)', value: 'Water' },
+                                { name: 'Air (advanced)', value: 'Air' }
                             ]
                         }
                     ]
@@ -55,7 +83,19 @@ export class Commands {
                 {
                     type: ApplicationCommandOptionType.Subcommand,
                     name: 'janken_check',
-                    description: 'check if anyone is playing'
+                    description: 'check if anyone is playing',
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'mode',
+                            description: 'janken mode, advanced has more finger options',
+                            required: true,
+                            choices: [
+                                { name: 'Normal', value: 'normal' },
+                                { name: 'Advanced', value: 'advanced' }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

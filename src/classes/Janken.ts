@@ -1,105 +1,160 @@
 import { EmbedBuilder } from "discord.js";
-import { JankenPlayerType } from "../lib/types";
+import { JankenModeType, JankenPlayerType } from "../lib/types";
 
 export class Janken {
-    private static playerArray: JankenPlayerType[] = []
+    protected static playerArray: JankenModeType = {
+        normal: [],
+        advanced: []
+    }
+    protected interact: any
+    protected mode: string
 
-    #checkPlayerId(playerId: number): number {
-        const checkPlayer = Janken.playerArray.map(v => { return v.id }).indexOf(playerId)
-        return checkPlayer
+    // make interact accessible by child classes
+    // ### TAMBAH PARAMETER UNTUK MEMISAH MODE normal DAN advanced
+    // ### TAMBAH PARAMETER UNTUK MEMISAH MODE normal DAN advanced
+    constructor(interact: any, mode: string) {
+        this.interact = interact
+        this.mode = mode
     }
 
-    #compareFingers(interact: any): string[] {
-        if(Janken.playerArray.length < 2) {
-            // not enough player
-            return interact.reply({ content: 'Not enough player to compare :nerd:', ephemeral: true })
-        }
-        const firstFinger = Janken.playerArray[0].finger
-        const secondFinger = Janken.playerArray[1].finger
-        const tempResult = []
-        // compare finger
-        // draw condition
-        if(firstFinger === secondFinger) {
-            tempResult.push('draw', 'draw')
-        }
-        else if(firstFinger !== secondFinger) {
-            switch(true) {
-                // win condition
-                case firstFinger === 'rock' && secondFinger === 'scissor':
-                case firstFinger === 'paper' && secondFinger === 'rock':
-                case firstFinger === 'scissor' && secondFinger === 'paper':
-                    tempResult.push('win', 'lose')
-                    break
-                // lose condition
-                case firstFinger === 'rock' && secondFinger === 'paper':
-                case firstFinger === 'paper' && secondFinger === 'scissor':
-                case firstFinger === 'scissor' && secondFinger === 'rock':
-                    tempResult.push('lose', 'win')
-                    break
+    // comparing fingers
+    // will be overridden by child method
+    protected compareFingers(): string[] {
+        return ['null', 'null']
+    }
+
+    // finger emoji
+    // will be overridden by child method
+    protected fingerEmoji(finger: string): string {
+        return ':skull:'
+    }
+
+    private fingerMode(finger: string) {
+        if(this.mode === 'normal') {
+            switch(finger) {
+                case 'rock':
+                case 'paper':
+                case 'scissor':
+                    return false
+                default:
+                    return true
             }
         }
-        return tempResult
+        else if(this.mode === 'advanced') {
+            switch(finger) {
+                case 'rock':
+                case 'paper':
+                case 'scissor':
+                case 'sponge':
+                case 'fire':
+                case 'water':
+                case 'air':
+                    return false
+                default:
+                    return true
+            }
+        }
+    }
+
+    // check player id to make sure the player not play alone
+    private checkPlayerId(playerId: number): number {
+        const checkPlayer = (): number => {
+            let playerExist = null
+            playerExist = Janken.playerArray[this.mode].map(v => { return v.id }).indexOf(playerId)
+            return playerExist
+        }
+        return checkPlayer()
+    }
+
+    private validateData(playerData: JankenPlayerType, command: string): { status: boolean, errorMessage: string } {
+        switch(command) {
+            // validation for janken_start command
+            case 'start':
+                if(this.checkPlayerId(playerData.id) !== -1) {
+                    // player id exist
+                    return { status: true, errorMessage: 'You already start the game :expressionless:' }
+                }
+                else if(Janken.playerArray[this.mode].length > 0) {
+                    // game already started
+                    return { status: true, errorMessage: `There is a running game (${this.mode}) :expressionless:` }
+                }
+                break
+            // validation for janken_join command
+            case 'join':
+                if(this.checkPlayerId(playerData.id) !== -1) {
+                    // player id exist and prevent same player doing solo game
+                    return { status: true, errorMessage: 'You already join the game :expressionless:' }
+                }
+                else if(Janken.playerArray[this.mode].length < 1) {
+                    // no running game 
+                    return { status: true, errorMessage: `There is no running game (${this.mode}) :expressionless:` }
+                }
+                break
+            default: 
+                return { status: true, errorMessage: 'validation null' }
+        }
+        return { status: false, errorMessage: 'null'}
     }
 
     // start the game
-    start(interact: any) {
+    start() {
         // set player data
         const firstPlayer = {
-            id: interact.member.user.id,
-            username: interact.member.nickname,
-            finger: interact.options.get('finger').value.toLowerCase(),
+            id: this.interact.member.user.id,
+            username: this.interact.member.nickname,
+            finger: this.interact.options.get('finger').value.toLowerCase(),
             result: null
         }
-        // check some stuff before start the game
-        if(this.#checkPlayerId(firstPlayer.id) !== -1) {
-            // player id exist
-            return interact.reply({ content: 'You already start the game :expressionless:', ephemeral: true })
+        // check finger mode
+        const checkFinger = this.fingerMode(firstPlayer.finger)
+        if(checkFinger) {
+            // when player using advanced finger on NORMAL mode
+            return this.interact.reply({ content: `Please use appropriate finger (${this.mode}) :clown:`, flags: [4096] })
         }
-        else if(Janken.playerArray.length > 0) {
-            // game already started
-            return interact.reply({ content: 'There is a running game :expressionless:', ephemeral: true })
+        // check some stuff before start the game
+        const validation = this.validateData(firstPlayer, 'start')
+        if(validation.status) {
+            // check player id and game status
+            return this.interact.reply({ content: validation.errorMessage, ephemeral: true })
         }
         // all stuff checked and no error found
         // push player data to array
-        Janken.playerArray.push(firstPlayer)
+        Janken.playerArray[this.mode].push(firstPlayer)
         // reply message
         // for everyone but silent - flags [4096]
-        interact.reply({ content: `${firstPlayer.username} waiting a challenger :sunglasses:`, flags: [4096] })
+        this.interact.reply({ content: `**${firstPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, flags: [4096] })
     }
 
     // join the existing game
-    join(interact: any) {
+    join() {
         // set player data
         const secondPlayer = {
-            id: interact.member.user.id,
-            username: interact.member.nickname,
-            finger: interact.options.get('finger').value.toLowerCase(),
+            id: this.interact.member.user.id,
+            username: this.interact.member.nickname,
+            finger: this.interact.options.get('finger').value.toLowerCase(),
             result: null
         }
+        // check finger mode
+        const checkFinger = this.fingerMode(secondPlayer.finger)
+        if(checkFinger) {
+            // when player using advanced finger on NORMAL mode
+            return this.interact.reply({ content: `Please use appropriate finger (${this.mode}) :clown:`, flags: [4096] })
+        }
         // check some stuff before start the game
-        if(this.#checkPlayerId(secondPlayer.id) !== -1) {
-            // player id exist and prevent same player doing solo game
-            return interact.reply({ content: 'You already join the game :expressionless:', ephemeral: true })
-        }
-        else if(Janken.playerArray.length < 1) {
-            // no running game 
-            return interact.reply({ content: 'There is no running game :expressionless:', ephemeral: true })
-        }
+        const validation = this.validateData(secondPlayer, 'join')
+        if(validation.status) 
+            return this.interact.reply({ content: validation.errorMessage, ephemeral: true })
         // push 2nd player to array
-        Janken.playerArray.push(secondPlayer)
+        Janken.playerArray[this.mode].push(secondPlayer)
         // compare finger from 1st and 2nd player
-        const compareResult: string[] = this.#compareFingers(interact)
-        Janken.playerArray.map((v, i) => { v.result = compareResult[i] })
+        const compareResult: string[] = this.compareFingers()
+        Janken.playerArray[this.mode].map((v, i) => { v.result = compareResult[i] })
         // create embed result
         const embedResult = new EmbedBuilder()
-            .setTitle('Janken (aduan jari)')
+            .setTitle(`Janken ${this.mode} (aduan jari)`)
             .setDescription(`game over <:daily_suicid:710973707241390202>\n───────────────────`)
-        for(let player of Janken.playerArray) {
-            const fingerEmoji = player.finger === 'rock' 
-                                ? ':punch:' 
-                                : player.finger === 'paper'
-                                    ? ':hand_splayed:'
-                                    : ':v:'
+        for(let player of Janken.playerArray[this.mode]) {
+            const fingerEmoji = this.fingerEmoji(player.finger)
             embedResult.addFields({
                 name: `${player.username} (${player.result})`,
                 value: `Finger: ${player.finger} ${fingerEmoji}`
@@ -107,21 +162,21 @@ export class Janken {
         } 
         // display result
         // flags [4096] = silent message
-        interact.reply({ embeds: [embedResult], flags: [4096] })
+        this.interact.reply({ embeds: [embedResult], flags: [4096] })
         // reset playerArray
-        Janken.playerArray = []
+        Janken.playerArray[this.mode] = []
     }
 
     // look for a running game
-    check(interact: any) {
-        if(Janken.playerArray.length === 0) {
+    check() {
+        if(Janken.playerArray[this.mode].length === 0) {
             // no one playing
-            interact.reply({ content: 'There is no game in progress :sob:', ephemeral: true })
+            this.interact.reply({ content: `There is no game in progress (${this.mode}) :sob:`, ephemeral: true })
         }
-        else if(Janken.playerArray.length > 0) {
+        else if(Janken.playerArray[this.mode].length > 0) {
             // someone is playing
-            const waitingPlayer = Janken.playerArray[0]
-            interact.reply({ content: `${waitingPlayer.username} is waiting :eyes:`, ephemeral: true })
+            const waitingPlayer = Janken.playerArray[this.mode][0]
+            this.interact.reply({ content: `**${waitingPlayer.username}** is waiting (${this.mode}) :eyes:`, ephemeral: true })
         }
     }
 }

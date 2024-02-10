@@ -24,6 +24,10 @@ type CommandsType = {
 }
 
 // janken types
+type JankenModeType = {
+    [normal: string]: JankenPlayerType[];
+}
+
 type JankenPlayerType = {
     id: number;
     username: string;
@@ -31,4 +35,4 @@ type JankenPlayerType = {
     result: string | null;
 }
 
-export { CommandsType, JankenPlayerType }
+export { CommandsType, JankenModeType, JankenPlayerType }

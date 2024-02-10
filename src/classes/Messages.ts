@@ -1,9 +1,12 @@
-import { Janken } from "./Janken";
+import { JankenAdvanced } from "./JankenAdvanced";
+import { JankenNormal } from "./JankenNormal";
 
 export class Messages {
-    private janken = new Janken()
 
     reply(interact: any) {
+        const mode = interact.options.get('mode').value
+        const jankenNormal = new JankenNormal(interact, mode)
+        const jankenAdvanced = new JankenAdvanced(interact, mode)
         // reply to user who interacted with slash commands
         switch(interact.commandName) {
             case 'greetings':
@@ -17,15 +20,18 @@ export class Messages {
                     // start
                     case 'janken_start':
                         console.log(interact.member.nickname, '> starting janken_start command');
-                        this.janken.start(interact)
+                        if(mode === 'normal') jankenNormal.start()
+                        else if(mode === 'advanced') jankenAdvanced.start()
                         break
                     case 'janken_join':
                         console.log(interact.member.nickname, '> starting janken_join command');
-                        this.janken.join(interact)
+                        if(mode === 'normal') jankenNormal.join()
+                        else if(mode === 'advanced') jankenAdvanced.join()
                         break
                     case 'janken_check':
                         console.log(interact.member.nickname, '> starting janken_check command');
-                        this.janken.check(interact)
+                        if(mode === 'normal') jankenNormal.check()
+                        else if(mode === 'advanced') jankenAdvanced.check()
                         break
                 }
                 break
