@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
-import { JankenModeType, JankenPlayerType } from "../lib/types";
+import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType, qbMethodType } from "../lib/types";
+import { DatabaseQueries } from "../lib/DatabaseQueries";
 
 export class Janken {
     protected static playerArray: JankenModeType = {
@@ -8,6 +9,7 @@ export class Janken {
     }
     protected interact: any
     protected mode: string
+    private dq = new DatabaseQueries()
 
     // make interact accessible by child classes
     // ### TAMBAH PARAMETER UNTUK MEMISAH MODE normal DAN advanced
@@ -163,6 +165,51 @@ export class Janken {
         // display result
         // flags [4096] = silent message
         this.interact.reply({ embeds: [embedResult], flags: [4096] })
+        // loop user data 
+        for(let player of Janken.playerArray[this.mode]) {
+            // create queryObject
+            const checkPlayer = this.dq.queryBuilder('janken_players', 123, 'id', +player.id) as dbSelectType
+            this.dq.selectOne(checkPlayer)
+                .then(async resultSelect => {
+                    // if theres error on database
+                    if(resultSelect.error !== null) {
+                        return console.log(`err: ${resultSelect.error}`);
+                    }
+                    // data get
+                    else {
+                        // set win/lose value
+                        const [winResult, loseResult] = player.result === 'draw' 
+                                                        ? [0, 0] 
+                                                        : player.result === 'win' 
+                                                            ? [1, 0] 
+                                                            : [0, 1]
+                        // check is data empty
+                        if(resultSelect.data?.length === 0) {
+                            // set insert data
+                            const insertData: IUColumnType = {
+                                id: +player.id,
+                                username: player.username,
+                                win: winResult,
+                                lose: loseResult
+                            }
+                            // insert player data
+                            const insertPlayer = this.dq.queryBuilder('janken_players', 123, null, null, insertData) as dbInsertType
+                            return this.dq.insert(insertPlayer)
+                                .catch(err => console.log(`err: ${err}`))
+                        }
+                        const resultData: any = resultSelect.data![0]
+                        // update player data
+                        const updateData: IUColumnType = {
+                            win: resultData.win + winResult,
+                            lose: resultData.lose + loseResult
+                        }
+                        const updatePlayer = this.dq.queryBuilder('janken_players', 123, 'id', +player.id, null, updateData) as dbUpdateType
+                        return this.dq.update(updatePlayer)
+                            .catch(err => console.log(`err: ${err}`))
+                    }
+                })
+                .catch(err => console.log(`err: ${err}`))
+        }
         // reset playerArray
         Janken.playerArray[this.mode] = []
     }
@@ -178,5 +225,27 @@ export class Janken {
             const waitingPlayer = Janken.playerArray[this.mode][0]
             this.interact.reply({ content: `**${waitingPlayer.username}** is waiting (${this.mode}) :eyes:`, ephemeral: true })
         }
+    }
+
+    // get player stats
+    stats() {
+        const playerId = this.interact.member.user.id
+        const checkPlayer = this.dq.queryBuilder('janken_players', 123, 'id', +playerId) as dbSelectType
+        this.dq.selectOne(checkPlayer)
+            .then(resultSelect => {
+                // if user not found
+                if(resultSelect.data?.length === 0) {
+                    return this.interact.reply({ content: `You don't have any record :skull:`, ephemeral: true })
+                }
+                const resultData: any = resultSelect.data![0]
+                const statsDescription = `**${resultData.username}**` +
+                                        `\nwin : ${resultData.win}` +
+                                        `\nlose : ${resultData.lose}`
+                const embedStats = new EmbedBuilder()
+                    .setTitle('Janken Player Stats :sunglasses:')
+                    .setDescription(statsDescription)
+                return this.interact.reply({ embeds: [embedStats], ephemeral: true })
+            })
+            .catch(err => console.log(`err: ${err}`))
     }
 }

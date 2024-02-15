@@ -96,6 +96,36 @@ export class Commands {
                             ]
                         }
                     ]
+                },
+                // player stats
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'janken_stats',
+                    description: 'check your janken statistic'
+                },
+                // ~~~ TES EDIT REPLY ~~~
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'abc_start',
+                    description: 'start abc game'
+                },
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'abc_join',
+                    description: 'join abc game'
+                },
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'abc_answer',
+                    description: 'answer abc game',
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'answer',
+                            description: 'put your answer',
+                            required: true
+                        }
+                    ]
                 }
             ]
         }

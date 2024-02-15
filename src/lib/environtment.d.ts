@@ -4,6 +4,8 @@ declare global {
             BOT_TOKEN: string;
             BOT_ID: string;
             GUILD_ID: string;
+            DB_URL: string;
+            DB_APIKEY: string;
         }
     }
   }

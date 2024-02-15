@@ -35,4 +35,55 @@ type JankenPlayerType = {
     result: string | null;
 }
 
-export { CommandsType, JankenModeType, JankenPlayerType }
+// database queries
+type qbMethodType = dbSelectType | dbInsertType | dbUpdateType
+
+type queryBuilderType = {
+    table: string;
+    selectColumn: string;
+    whereColumn: string | null;
+    whereValue: string | number | null;
+    get insertColumn(): IUColumnType;
+    get updateColumn(): IUColumnType;
+}
+
+type dbSelectType = {
+    table: string;
+    selectColumn: string;
+    whereColumn: string;
+    whereValue: string | number;
+}
+
+type dbInsertType = {
+    table: string;
+    selectColumn: string;
+    get insertColumn(): IUColumnType;
+}
+
+type dbUpdateType = {
+    table: string;
+    selectColumn: string;
+    whereColumn: string;
+    whereValue: string | number;
+    get updateColumn(): IUColumnType;
+}
+
+// insert / update column 
+type IUColumnType = {
+    id?: number;
+    username?: string;
+    win: number;
+    lose: number;
+}
+
+export { 
+    CommandsType, 
+    JankenModeType, 
+    JankenPlayerType, 
+    dbSelectType, 
+    dbInsertType, 
+    dbUpdateType,
+    IUColumnType,
+    queryBuilderType,
+    qbMethodType
+}
