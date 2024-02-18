@@ -132,3 +132,4 @@ dist
 # other
 latihan-classes.ts
 build/
+*.bat
