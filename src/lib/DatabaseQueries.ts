@@ -10,9 +10,10 @@ export class DatabaseQueries {
             for(let col of sc.toString().split('')) {
                 switch(+col) {
                     // janken_players columns
-                    case 1: choosenColumns.push('username'); break
-                    case 2: choosenColumns.push('win'); break
-                    case 3: choosenColumns.push('lose'); break
+                    case 1: choosenColumns.push('id'); break
+                    case 2: choosenColumns.push('username'); break
+                    case 3: choosenColumns.push('win'); break
+                    case 4: choosenColumns.push('lose'); break
                 }
             }
             return choosenColumns.join(', ')
@@ -54,6 +55,16 @@ export class DatabaseQueries {
             temp_qb = qb as dbUpdateType
         }
         return temp_qb
+    }
+
+    selectAll(queryObject: dbSelectType) {
+        // get all data from supabase
+        const selectAllDataFromDB = async () => {
+            const {data, error} = await supabase.from(queryObject.table)
+                                .select(queryObject.selectColumn)
+            return {data: data, error: error}
+        }
+        return selectAllDataFromDB()
     }
 
     selectOne(queryObject: dbSelectType) {

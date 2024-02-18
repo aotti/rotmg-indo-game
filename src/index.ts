@@ -8,22 +8,22 @@ import { Messages } from './classes/Messages';
 const envFilePath = resolve(process.cwd(), '.env')
 config({ path: envFilePath })
 
-// register commands
-const command = new Commands()
-command.register()
-
 // Initialize Discord Bot 
 const bot = new Client({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.MessageContent
+        IntentsBitField.Flags.MessageContent,
+        IntentsBitField.Flags.GuildMembers
     ]
 });
 
 // log message when bot online
 bot.on('ready', (b) => {
     console.log(`${b.user.tag} is online at ${new Date().toLocaleTimeString()}`);
+    // register commands
+    const command = new Commands()
+    command.register()
 })
 
 // listen to any slash command

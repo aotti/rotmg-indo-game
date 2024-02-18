@@ -78,6 +78,7 @@ type IUColumnType = {
 
 export { 
     CommandsType, 
+    SubCommandOptionsType,
     JankenModeType, 
     JankenPlayerType, 
     dbSelectType, 

@@ -1,6 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType, qbMethodType } from "../lib/types";
 import { DatabaseQueries } from "../lib/DatabaseQueries";
+import { Commands } from "./Commands";
 
 export class Janken {
     protected static playerArray: JankenModeType = {
@@ -12,8 +13,6 @@ export class Janken {
     private dq = new DatabaseQueries()
 
     // make interact accessible by child classes
-    // ### TAMBAH PARAMETER UNTUK MEMISAH MODE normal DAN advanced
-    // ### TAMBAH PARAMETER UNTUK MEMISAH MODE normal DAN advanced
     constructor(interact: any, mode: string) {
         this.interact = interact
         this.mode = mode
@@ -168,7 +167,7 @@ export class Janken {
         // loop user data 
         for(let player of Janken.playerArray[this.mode]) {
             // create queryObject
-            const checkPlayer = this.dq.queryBuilder('janken_players', 123, 'id', +player.id) as dbSelectType
+            const checkPlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id) as dbSelectType
             this.dq.selectOne(checkPlayer)
                 .then(async resultSelect => {
                     // if theres error on database
@@ -193,22 +192,31 @@ export class Janken {
                                 lose: loseResult
                             }
                             // insert player data
-                            const insertPlayer = this.dq.queryBuilder('janken_players', 123, null, null, insertData) as dbInsertType
+                            const insertPlayer = this.dq.queryBuilder('janken_players', 234, null, null, insertData) as dbInsertType
                             return this.dq.insert(insertPlayer)
+                                .then(resultInsert => {
+                                    // re-run register command to update choice values
+                                    // on janken_stats command
+                                    const command = new Commands()
+                                    command.register()
+                                })
                                 .catch(err => console.log(`err: ${err}`))
                         }
+                        // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
+                        // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
                         const resultData: any = resultSelect.data![0]
                         // update player data
                         const updateData: IUColumnType = {
+                            username: player.username,
                             win: resultData.win + winResult,
                             lose: resultData.lose + loseResult
                         }
-                        const updatePlayer = this.dq.queryBuilder('janken_players', 123, 'id', +player.id, null, updateData) as dbUpdateType
+                        const updatePlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id, null, updateData) as dbUpdateType
                         return this.dq.update(updatePlayer)
                             .catch(err => console.log(`err: ${err}`))
                     }
                 })
-                .catch(err => console.log(`err: ${err}`))
+                .catch(err => console.log(`janken join: ${err}`))
         }
         // reset playerArray
         Janken.playerArray[this.mode] = []
@@ -229,23 +237,38 @@ export class Janken {
 
     // get player stats
     stats() {
-        const playerId = this.interact.member.user.id
-        const checkPlayer = this.dq.queryBuilder('janken_players', 123, 'id', +playerId) as dbSelectType
+        const playerId: string = this.interact.options.get('player')?.value || this.interact.member.user.id
+        const checkPlayer = this.dq.queryBuilder('janken_players', 234, 'id', +playerId) as dbSelectType
         this.dq.selectOne(checkPlayer)
             .then(resultSelect => {
                 // if user not found
                 if(resultSelect.data?.length === 0) {
                     return this.interact.reply({ content: `You don't have any record :skull:`, ephemeral: true })
                 }
+                // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
+                // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
                 const resultData: any = resultSelect.data![0]
+                const winRate = resultData.win / (resultData.win + resultData.lose) * 100
                 const statsDescription = `**${resultData.username}**` +
-                                        `\nwin : ${resultData.win}` +
+                                        `\ngame : ${resultData.win + resultData.lose}` +
+                                        `\nwin : ${resultData.win} (${winRate.toFixed(1)}%)` +
                                         `\nlose : ${resultData.lose}`
                 const embedStats = new EmbedBuilder()
                     .setTitle('Janken Player Stats :sunglasses:')
                     .setDescription(statsDescription)
                 return this.interact.reply({ embeds: [embedStats], ephemeral: true })
             })
-            .catch(err => console.log(`err: ${err}`))
+            .catch(err => console.log(`janken stats: ${err}`))
+    }
+
+    // get all server members
+    getPlayers() {
+        const queryPlayers = this.dq.queryBuilder('janken_players', 12, 'id', 1) as dbSelectType
+        return this.dq.selectAll(queryPlayers)
+            .then(resultAll => {
+                const allPlayers: any = resultAll.data
+                return allPlayers
+            })
+            .catch(err => console.log(`janken getPlayers: ${err}`))
     }
 }
