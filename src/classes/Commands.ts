@@ -14,10 +14,10 @@ export class Commands {
             description: 'gaming commands',
             options: [
                 // ~~~ JANKEN GAME COMMANDS ~~~
-                // start game
+                // battle
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'janken_start',
+                    name: 'janken_battle',
                     description: 'start the paper-rock-scissor game',
                     options: [
                         {
@@ -43,57 +43,6 @@ export class Commands {
                                 { name: 'Fire (advanced)', value: 'Fire' },
                                 { name: 'Water (advanced)', value: 'Water' },
                                 { name: 'Air (advanced)', value: 'Air' }
-                            ]
-                        }
-                    ]
-                },
-                // join game
-                {
-                    type: ApplicationCommandOptionType.Subcommand,
-                    name: 'janken_join',
-                    description: 'join to existing paper-rock-scissor game',
-                    options: [
-                        {
-                            type: ApplicationCommandOptionType.String,
-                            name: 'mode',
-                            description: 'janken mode, advanced has more finger options',
-                            required: true,
-                            choices: [
-                                { name: 'Normal', value: 'normal' },
-                                { name: 'Advanced', value: 'advanced' }
-                            ]
-                        },
-                        {
-                            type: ApplicationCommandOptionType.String,
-                            name: 'finger',
-                            description: 'the type of finger to be used',
-                            required: true,
-                            choices: [
-                                { name: 'Paper', value: 'Paper' },
-                                { name: 'Rock', value: 'Rock' },
-                                { name: 'Scissor', value: 'Scissor' },
-                                { name: 'Sponge (advanced)', value: 'Sponge' },
-                                { name: 'Fire (advanced)', value: 'Fire' },
-                                { name: 'Water (advanced)', value: 'Water' },
-                                { name: 'Air (advanced)', value: 'Air' }
-                            ]
-                        }
-                    ]
-                },
-                // check game
-                {
-                    type: ApplicationCommandOptionType.Subcommand,
-                    name: 'janken_check',
-                    description: 'check if anyone is playing',
-                    options: [
-                        {
-                            type: ApplicationCommandOptionType.String,
-                            name: 'mode',
-                            description: 'janken mode, advanced has more finger options',
-                            required: true,
-                            choices: [
-                                { name: 'Normal', value: 'normal' },
-                                { name: 'Advanced', value: 'advanced' }
                             ]
                         }
                     ]
@@ -152,7 +101,7 @@ export class Commands {
             allPlayersCommand.choices!.push({ name: player.username, value: `${player.id}` })
         }
         // push the subCommandOptions \w choices to options
-        this.commandList[1].options![3].options!.push(allPlayersCommand)
+        this.commandList[1].options![1].options!.push(allPlayersCommand)
         // start input commands to the bot
         try {
             console.log('preparing commands');

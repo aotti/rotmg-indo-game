@@ -1,3 +1,5 @@
+import { PostgrestError } from "@supabase/supabase-js";
+
 // command types
 type SubCommandOptionsType = {
     type: number;
@@ -36,6 +38,11 @@ type JankenPlayerType = {
 }
 
 // database queries
+type dbReturnType = {
+    data: any[] | null;
+    error: PostgrestError | null;
+}
+
 type qbMethodType = dbSelectType | dbInsertType | dbUpdateType
 
 type queryBuilderType = {
@@ -86,5 +93,6 @@ export {
     dbUpdateType,
     IUColumnType,
     queryBuilderType,
-    qbMethodType
+    qbMethodType,
+    dbReturnType
 }

@@ -21,6 +21,8 @@ const bot = new Client({
 // log message when bot online
 bot.on('ready', (b) => {
     console.log(`${b.user.tag} is online at ${new Date().toLocaleTimeString()}`);
+    // set custom status (activity)
+    b.user.setActivity('/gaming')
     // register commands
     const command = new Commands()
     command.register()

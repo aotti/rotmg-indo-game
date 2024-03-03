@@ -1,5 +1,5 @@
 import { supabase } from "./database";
-import { dbInsertType, dbSelectType, dbUpdateType, IUColumnType, qbMethodType, queryBuilderType } from "./types";
+import { dbInsertType, dbReturnType, dbSelectType, dbUpdateType, IUColumnType, qbMethodType, queryBuilderType } from "./types";
 
 export class DatabaseQueries {
 
@@ -57,7 +57,7 @@ export class DatabaseQueries {
         return temp_qb
     }
 
-    selectAll(queryObject: dbSelectType) {
+    selectAll(queryObject: dbSelectType): Promise<dbReturnType> {
         // get all data from supabase
         const selectAllDataFromDB = async () => {
             const {data, error} = await supabase.from(queryObject.table)
@@ -67,7 +67,7 @@ export class DatabaseQueries {
         return selectAllDataFromDB()
     }
 
-    selectOne(queryObject: dbSelectType) {
+    selectOne(queryObject: dbSelectType): Promise<dbReturnType> {
         // get specific data from supabase
         const selectOneDataFromDB = async () => {
             const {data, error} = await supabase.from(queryObject.table)
@@ -78,7 +78,7 @@ export class DatabaseQueries {
         return selectOneDataFromDB()
     }
 
-    insert(queryObject: dbInsertType) {
+    insert(queryObject: dbInsertType): Promise<dbReturnType> {
         const insertDataToDB = async () => {
             // insert player data who joined the game
             const {data, error} = await supabase.from(queryObject.table)
@@ -90,7 +90,7 @@ export class DatabaseQueries {
         return insertDataToDB()
     }
 
-    update(queryObject: dbUpdateType) {
+    update(queryObject: dbUpdateType): Promise<dbReturnType> {
         const updateDataToDB = async () => {
             const {data, error} = await supabase.from(queryObject.table)
                                 .update(queryObject.updateColumn)
