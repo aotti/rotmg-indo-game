@@ -199,7 +199,7 @@ export class Janken {
     // get player stats
     stats() {
         const playerId: string = this.interact.options.get('player')?.value as string || this.interact.member!.user.id
-        const checkPlayer = this.dq.queryBuilder('janken_players', 234, 'id', +playerId) as dbSelectType
+        const checkPlayer = this.dq.queryBuilder('janken_players', 2345, 'id', +playerId) as dbSelectType
         this.dq.selectOne(checkPlayer)
             .then(resultSelect => {
                 // if user not found
