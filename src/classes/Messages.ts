@@ -4,6 +4,7 @@ import { JankenNormal } from "./JankenNormal";
 export class Messages {
 
     reply(interact: any) {
+        const username = interact.member.nickname || interact.user.username
         // janken classes
         const mode = interact.options.get('mode')?.value || ''
         const jankenNormal = new JankenNormal(interact, mode)
@@ -13,7 +14,7 @@ export class Messages {
         // reply to user who interacted with slash commands
         switch(interact.commandName) {
             case 'greetings':
-                console.log(interact.member.nickname, '> starting greetings command');
+                console.log(username, '> starting greetings command');
                 interact.reply('gaming gays')
                 break
             // gaming command
@@ -22,26 +23,26 @@ export class Messages {
                     // JANKEN GAME
                     // start
                     case 'janken_battle':
-                        console.log(interact.member.nickname, '> starting janken_battle command');
+                        console.log(username, '> starting janken_battle command');
                         if(mode === 'normal') jankenNormal.battle()
                         else if(mode === 'advanced') jankenAdvanced.battle()
                         break
                     // check player statistic
                     case 'janken_stats':
-                        console.log(interact.member.nickname, '> starting janken_stats command');
+                        console.log(username, '> starting janken_stats command');
                         jankenNormal.stats()
                         break
                     // ABC GAME
                     // start
                     case 'abc_start':
-                        console.log(interact.member.nickname, '> starting abc_start command');
+                        console.log(username, '> starting abc_start command');
                         interact.send('game start')
                         break
                     case 'abc_join':
-                        console.log(interact.member.nickname, '> starting abc_join command');
+                        console.log(username, '> starting abc_join command');
                         break
                     case 'abc_answer':
-                        console.log(interact.member.nickname, '> starting abc_answer command');
+                        console.log(username, '> starting abc_answer command');
                         break
                 }
                 break

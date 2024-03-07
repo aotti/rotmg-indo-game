@@ -14,6 +14,7 @@ export class DatabaseQueries {
                     case 2: choosenColumns.push('username'); break
                     case 3: choosenColumns.push('win'); break
                     case 4: choosenColumns.push('lose'); break
+                    case 5: choosenColumns.push('draw'); break
                 }
             }
             return choosenColumns.join(', ')

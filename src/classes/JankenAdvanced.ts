@@ -42,11 +42,7 @@ export class JankenAdvanced extends Janken {
             }
             return result
         }
-        // check number of players
-        if(Janken.playerArray[this.mode].length < 2) {
-            // not enough player
-            return this.interact.reply({ content: 'Not enough player to compare :nerd:', ephemeral: true })
-        }
+        // get player fingers
         const firstFinger = Janken.playerArray[this.mode][0].finger
         const secondFinger = Janken.playerArray[this.mode][1].finger
         const tempResult = []

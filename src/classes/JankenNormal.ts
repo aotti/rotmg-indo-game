@@ -17,17 +17,9 @@ export class JankenNormal extends Janken {
     
 
     protected compareFingers(): string[] {
-        if(Janken.playerArray[this.mode].length < 2) {
-            // not enough player
-            return this.interact.reply({ content: 'Not enough player to compare :nerd:', ephemeral: true })
-        }
+        // get player fingers
         const firstFinger = Janken.playerArray[this.mode][0].finger
         const secondFinger = Janken.playerArray[this.mode][1].finger
-        // // check if finger is for normal mode
-        // if(this.fingerNormal(firstFinger) === false || this.fingerNormal(secondFinger) === false) {
-        //     // finger is not normal
-        //     return this.interact.reply({ content: `Please use appropriate finger (${this.mode})`, flags: [4096] })
-        // }
         const tempResult = []
         // compare finger
         // draw condition

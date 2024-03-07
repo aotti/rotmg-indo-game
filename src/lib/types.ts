@@ -81,6 +81,7 @@ type IUColumnType = {
     username?: string;
     win: number;
     lose: number;
+    draw: number;
 }
 
 export { 

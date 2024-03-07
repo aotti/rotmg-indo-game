@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types";
 import { DatabaseQueries } from "../lib/DatabaseQueries";
 import { Commands } from "./Commands";
@@ -8,7 +8,7 @@ export class Janken {
         normal: [],
         advanced: []
     }
-    protected interact: any
+    protected interact: ChatInputCommandInteraction
     protected mode: string
     private dq = new DatabaseQueries()
 
@@ -79,7 +79,7 @@ export class Janken {
                 const checkFinger = this.fingerMode(playerData.finger)
                 if(checkFinger) {
                     // when player using advanced finger on NORMAL mode
-                    return this.interact.reply({ content: `Please use appropriate finger (${this.mode}) :clown:`, flags: [4096] })
+                    return { status: true, errorMessage: `Please use appropriate finger (${this.mode}) :clown:` }
                 }
                 break
             default: 
@@ -92,9 +92,9 @@ export class Janken {
     battle() {
         // set player data
         const jankenPlayer = {
-            id: this.interact.member.user.id,
-            username: this.interact.member.nickname,
-            finger: this.interact.options.get('finger').value.toLowerCase(),
+            id: +this.interact.member!.user.id,
+            username: (this.interact.member as any).nickname || this.interact.user.username,
+            finger: (this.interact.options.get('finger')!.value as string).toLowerCase(),
             result: null
         }
         // check some stuff before start the game
@@ -108,10 +108,10 @@ export class Janken {
         // player = 0
         if(Janken.playerArray[this.mode].length === 0) {
             // push player data to array
-            Janken.playerArray[this.mode].push(jankenPlayer)
+            Janken.playerArray[this.mode].push(jankenPlayer);
             // reply message
             // for everyone but silent - flags [4096]
-            this.interact.reply({ content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, flags: [4096] })
+            (this.interact as any).reply({ content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, flags: [4096] })
         }
         // player = 1
         else if(Janken.playerArray[this.mode].length === 1) {
@@ -133,11 +133,11 @@ export class Janken {
             } 
             // display result
             // flags [4096] = silent message
-            this.interact.reply({ embeds: [embedResult], flags: [4096] })
+            (this.interact as any).reply({ embeds: [embedResult], flags: [4096] })
             // loop user data 
             for(let player of Janken.playerArray[this.mode]) {
                 // create queryObject
-                const checkPlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id) as dbSelectType
+                const checkPlayer = this.dq.queryBuilder('janken_players', 2345, 'id', +player.id) as dbSelectType
                 this.dq.selectOne(checkPlayer)
                     .then(async resultSelect => {
                         // if theres error on database
@@ -152,6 +152,8 @@ export class Janken {
                                                             : player.result === 'win' 
                                                                 ? [1, 0] 
                                                                 : [0, 1]
+                            // set draw value
+                            const drawResult = (winResult + loseResult) === 0 ? 1 : 0
                             // check is data empty
                             if(resultSelect.data?.length === 0) {
                                 // set insert data
@@ -159,7 +161,8 @@ export class Janken {
                                     id: +player.id,
                                     username: player.username,
                                     win: winResult,
-                                    lose: loseResult
+                                    lose: loseResult,
+                                    draw: drawResult
                                 }
                                 // insert player data
                                 const insertPlayer = this.dq.queryBuilder('janken_players', 234, null, null, insertData) as dbInsertType
@@ -173,12 +176,13 @@ export class Janken {
                                     .catch(err => console.log(`err: ${err}`))
                             }
                             // destructure win and lose
-                            const { win, lose } = resultSelect.data![0] as {win: number, lose: number}
+                            const { win, lose, draw } = resultSelect.data![0] as {win: number, lose: number, draw: number}
                             // update player data
                             const updateData: IUColumnType = {
                                 username: player.username,
                                 win: win + winResult,
-                                lose: lose + loseResult
+                                lose: lose + loseResult,
+                                draw: draw + drawResult
                             }
                             const updatePlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id, null, updateData) as dbUpdateType
                             return this.dq.update(updatePlayer)
@@ -194,7 +198,7 @@ export class Janken {
 
     // get player stats
     stats() {
-        const playerId: string = this.interact.options.get('player')?.value || this.interact.member.user.id
+        const playerId: string = this.interact.options.get('player')?.value as string || this.interact.member!.user.id
         const checkPlayer = this.dq.queryBuilder('janken_players', 234, 'id', +playerId) as dbSelectType
         this.dq.selectOne(checkPlayer)
             .then(resultSelect => {
