@@ -208,12 +208,13 @@ export class Janken {
                 }
                 // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
                 // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
-                const resultData: any = resultSelect.data![0]
-                const winRate = resultData.win / (resultData.win + resultData.lose) * 100
-                const statsDescription = `**${resultData.username}**` +
-                                        `\ngame : ${resultData.win + resultData.lose}` +
-                                        `\nwin : ${resultData.win} (${winRate.toFixed(1)}%)` +
-                                        `\nlose : ${resultData.lose}`
+                const { username, win, lose, draw } = resultSelect.data![0] as {username: string, win: number, lose: number, draw: number}
+                const winRate = win / (win + lose + draw) * 100
+                const statsDescription = `**${username}**` +
+                                        `\ngame : ${win + lose + draw}` +
+                                        `\nwin : ${win} (${winRate.toFixed(1)}%)` +
+                                        `\nlose : ${lose}` +
+                                        `\ndraw : ${draw}`
                 const embedStats = new EmbedBuilder()
                     .setTitle('Janken Player Stats :sunglasses:')
                     .setDescription(statsDescription)
