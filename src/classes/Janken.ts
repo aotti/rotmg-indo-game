@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types";
 import { DatabaseQueries } from "../lib/DatabaseQueries";
 import { Commands } from "./Commands";
@@ -13,9 +13,8 @@ export class Janken {
     private dq = new DatabaseQueries()
 
     // make interact accessible by child classes
-    constructor(interact: any, mode: string) {
-        this.interact = interact
-        this.mode = mode
+    constructor(interact: ChatInputCommandInteraction | null) {
+        this.interact = interact as ChatInputCommandInteraction
     }
 
     // comparing fingers
@@ -88,20 +87,105 @@ export class Janken {
         return { status: false, errorMessage: 'null'}
     }
 
+    async selectMode() {
+        // prepare stuff for select mode buttons
+        const modeButtons = []
+        const modeNames = ['Normal', 'Advanced']
+        // loop mode names
+        for(let mode of modeNames) {
+            // create mode button
+            const modeButton = new ButtonBuilder()
+                .setCustomId(mode.toLowerCase())
+                .setLabel(mode)
+                .setStyle(ButtonStyle.Secondary)
+            // push button to array
+            modeButtons.push(modeButton)
+        }
+        // set button as components
+        const modeRow = new ActionRowBuilder<ButtonBuilder>().addComponents(modeButtons)
+        // display mode buttons
+        const buttonResponse = await this.interact.reply({ 
+            content: `Select janken mode:`, 
+            components: [modeRow],
+            flags: "Ephemeral"
+        })
+        // button interaction
+        try {
+            // ensures that only the user who triggered the interaction can use the buttons
+            const collectorFilter = (i: any) => i.user.id === this.interact.user.id
+            // waiting player to click a button
+            const confirmation = await buttonResponse.awaitMessageComponent({ filter: collectorFilter, time: 10_000 })
+            // set game mode
+            this.mode = confirmation.customId
+            // edit message after clicked a button
+            await confirmation.update({ content: `You selected **${this.mode}** mode`, components: [] })
+        } catch (err) {
+            await this.interact.editReply({
+                content: 'You only have 10 seconds to select mode :eyes:',
+                components: []
+            })
+        }
+        return this.mode
+    }
+
     // play the game
-    battle() {
+    async battle() {
         // set player data
         const jankenPlayer = {
             id: +this.interact.member!.user.id,
             username: (this.interact.member as any).nickname || this.interact.user.username,
-            finger: (this.interact.options.get('finger')!.value as string).toLowerCase(),
+            finger: '',
             result: null
+        }
+        // prepare stuff for finger buttons
+        const fingerNames = ['Paper', 'Rock', 'Scissor', 'Sponge', 'Fire', 'Water', 'Air']
+        const normalFingers = []
+        const advancedFingers = []
+        for(let finger of fingerNames) {
+            // different finger names for NORMAL and ADVANCED
+            const advFinger = finger == 'Paper' || finger == 'Rock' || finger == 'Scissor' 
+                            ? `${finger} (normal)` 
+                            : `${finger} (advanced)`
+            // create button
+            const fb = new ButtonBuilder()
+                .setCustomId(finger.toLowerCase())
+                .setLabel(advFinger)
+                .setStyle(ButtonStyle.Primary)
+            // push button to array
+            if(advFinger.match('advanced'))
+                advancedFingers.push(fb)
+            else 
+                normalFingers.push(fb)
+        }
+        // set buttons as components
+        const normalRow = new ActionRowBuilder<ButtonBuilder>().addComponents(normalFingers)
+        const advancedRow = new ActionRowBuilder<ButtonBuilder>().addComponents(advancedFingers)
+        // display finger buttons
+        const buttonResponse = await this.interact.editReply({
+            content: `Select your finger (${this.mode})`,
+            components: this.mode === 'normal' ? [normalRow] : [normalRow, advancedRow]
+        })
+        // button interaction
+        try {
+            // ensures that only the user who triggered the interaction can use the buttons
+            const collectorFilter = (i: any) => i.user.id === this.interact.user.id
+            // waiting player to click a button
+            const confirmation = await buttonResponse.awaitMessageComponent({ filter: collectorFilter, time: 10_000 })
+            // set player finger
+            jankenPlayer.finger = confirmation.customId
+            // edit message after clicked a button
+            await confirmation.update({ content: `Your finger is **${jankenPlayer.finger}**`, components: [] })
+        } catch (err) {
+            await this.interact.editReply({
+                content: 'You only have 10 seconds to select finger :eyes:',
+                components: []
+            })
         }
         // check some stuff before start the game
         const validation = this.validateData(jankenPlayer, 'battle')
         if(validation.status) {
             // check player id and game status
-            return this.interact.reply({ content: validation.errorMessage, ephemeral: true })
+            return await this.interact.reply({ content: validation.errorMessage, ephemeral: true })
         }
         // all stuff checked and no error found
         // check num of players
@@ -110,8 +194,11 @@ export class Janken {
             // push player data to array
             Janken.playerArray[this.mode].push(jankenPlayer);
             // reply message
-            // for everyone but silent - flags [4096]
-            (this.interact as any).reply({ content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, flags: [4096] })
+            // for everyone but silent - flags '4096' 
+            await this.interact.followUp({ 
+                content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, 
+                flags: '4096' 
+            })
         }
         // player = 1
         else if(Janken.playerArray[this.mode].length === 1) {
@@ -133,7 +220,10 @@ export class Janken {
             } 
             // display result
             // flags [4096] = silent message
-            (this.interact as any).reply({ embeds: [embedResult], flags: [4096] })
+            await this.interact.followUp({ 
+                embeds: [embedResult], 
+                flags: '4096' 
+            })
             // loop user data 
             for(let player of Janken.playerArray[this.mode]) {
                 // create queryObject
@@ -186,6 +276,12 @@ export class Janken {
                             }
                             const updatePlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id, null, updateData) as dbUpdateType
                             return this.dq.update(updatePlayer)
+                                .then(resultUpdate => {
+                                    // re-run register command to update choice values
+                                    // on janken_stats command
+                                    const command = new Commands()
+                                    command.register()
+                                })
                                 .catch(err => console.log(`err: ${err}`))
                         }
                     })

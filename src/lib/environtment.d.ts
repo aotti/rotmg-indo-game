@@ -6,6 +6,8 @@ declare global {
             GUILD_ID: string;
             DB_URL: string;
             DB_APIKEY: string;
+            CIPHER_SECRET_KEY: string;
+            CIPHER_SECRET_IV: string;
         }
     }
   }

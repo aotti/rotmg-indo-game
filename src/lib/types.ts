@@ -1,6 +1,6 @@
 import { PostgrestError } from "@supabase/supabase-js";
 
-// command types
+// ~~ command types ~~
 type SubCommandOptionsType = {
     type: number;
     name: string;
@@ -8,7 +8,8 @@ type SubCommandOptionsType = {
     required?: boolean;
     choices?: { 
         name: string | number, 
-        value: string | number 
+        value: string | number,
+        hidden?: string | number
     }[]
 }
 
@@ -25,9 +26,9 @@ type CommandsType = {
     options?: SubCommandsType[];
 }
 
-// janken types
+// ~~ janken types ~~
 type JankenModeType = {
-    [normal: string]: JankenPlayerType[];
+    [key: string]: JankenPlayerType[];
 }
 
 type JankenPlayerType = {
@@ -37,7 +38,7 @@ type JankenPlayerType = {
     result: string | null;
 }
 
-// database queries
+// ~~ database queries ~~
 type dbReturnType = {
     data: any[] | null;
     error: PostgrestError | null;
@@ -84,6 +85,14 @@ type IUColumnType = {
     draw: number;
 }
 
+// ~~ cipher ~~
+type encryptedType = {
+    iv: string;
+    encryptedText: string;
+    decryptedText?: string;
+    slicedEncrypted: string[]
+}
+
 export { 
     CommandsType, 
     SubCommandOptionsType,
@@ -95,5 +104,6 @@ export {
     IUColumnType,
     queryBuilderType,
     qbMethodType,
-    dbReturnType
+    dbReturnType,
+    encryptedType
 }

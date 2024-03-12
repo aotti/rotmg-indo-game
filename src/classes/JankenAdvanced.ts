@@ -1,8 +1,10 @@
+import { ChatInputCommandInteraction } from "discord.js";
 import { Janken } from "./Janken";
 
 export class JankenAdvanced extends Janken {
-    constructor(interact: any, mode: string) {
-        super(interact, mode)
+    constructor(interact: ChatInputCommandInteraction, mode: string) {
+        super(interact)
+        this.mode = mode
     }
 
     protected fingerEmoji(finger: string): string {
