@@ -19,7 +19,34 @@ export class Commands {
                 {
                     type: ApplicationCommandOptionType.Subcommand,
                     name: 'janken_battle',
-                    description: 'start the paper-rock-scissor game'
+                    description: 'start the paper-rock-scissor game',
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'mode',
+                            description: 'janken mode, advanced has more finger options',
+                            required: true,
+                            choices: [
+                                { name: 'Normal', value: 'normal' },
+                                { name: 'Advanced', value: 'advanced' }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'finger',
+                            description: 'the type of finger to be used',
+                            required: true,
+                            choices: [
+                                { name: 'Paper', value: 'paper' },
+                                { name: 'Rock', value: 'rock' },
+                                { name: 'Scissor', value: 'scissor' },
+                                { name: 'Sponge (advanced)', value: 'sponge' },
+                                { name: 'Fire (advanced)', value: 'fire' },
+                                { name: 'Water (advanced)', value: 'water' },
+                                { name: 'Air (advanced)', value: 'air' }
+                            ]
+                        }
+                    ]
                 },
                 // player stats
                 {
