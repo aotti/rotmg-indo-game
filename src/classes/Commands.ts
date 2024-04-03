@@ -55,27 +55,76 @@ export class Commands {
                     description: 'check your janken statistic',
                     options: []
                 },
-                // ~~~ TES EDIT REPLY ~~~
+                // ~~~ ABC 5 DASAR COMMANDS ~~~
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'abc_start',
-                    description: 'start abc game'
+                    name: 'abc_stats',
+                    description: 'check abc 5 dasar player stats'
                 },
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'abc_join',
-                    description: 'join abc game'
-                },
-                {
-                    type: ApplicationCommandOptionType.Subcommand,
-                    name: 'abc_answer',
-                    description: 'answer abc game',
+                    name: 'abc_register',
+                    description: 'register your data to play abc 5 dasar',
                     options: [
                         {
                             type: ApplicationCommandOptionType.String,
-                            name: 'answer',
-                            description: 'put your answer',
+                            name: 'username',
+                            description: 'username will be lowercase no matter what; characters: alphabet, number, - or _',
                             required: true
+                        }
+                    ]
+                },
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'abc_start',
+                    description: 'start abc 5 dasar game',
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.Integer,
+                            name: 'game_rounds',
+                            description: 'set round number',
+                            required: true,
+                            choices: [
+                                { name: '1 (一)', value: 1 },
+                                { name: '2 (ニ)', value: 2 },
+                                { name: '3 (三)', value: 3 },
+                                { name: '4 (四)', value: 4 }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.Integer,
+                            name: 'category_amount',
+                            description: 'select how many category you gonna pick',
+                            required: true,
+                            choices: [
+                                { name: '1', value: 1 },
+                                { name: '2', value: 2 }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.Integer,
+                            name: 'max_player',
+                            description: 'set the limit of players who can join',
+                            required: true,
+                            choices: [
+                                { name: '2', value: 2 },
+                                { name: '3', value: 3 },
+                                { name: '4', value: 4 },
+                                { name: '5', value: 5 },
+                                { name: '6', value: 6 },
+                                { name: '7', value: 7 }
+                            ]
+                        },
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'room_name',
+                            description: 'set room name, this name can be used to search for running game',
+                            required: true
+                        },
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'room_password',
+                            description: '(OPTIONAL) if you wanna play private game'
                         }
                     ]
                 }

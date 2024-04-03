@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types";
 import { DatabaseQueries } from "../lib/DatabaseQueries";
 import { Commands } from "./Commands";
@@ -25,7 +25,7 @@ export class Janken {
 
     // finger emoji
     // will be overridden by child method
-    protected fingerEmoji(finger: string): string {
+    protected fingerEmoji(finger: string) {
         return ':skull:'
     }
 

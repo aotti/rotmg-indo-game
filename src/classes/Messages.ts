@@ -1,6 +1,9 @@
 import { ChatInputCommandInteraction } from "discord.js";
 import { JankenAdvanced } from "./JankenAdvanced";
 import { JankenNormal } from "./JankenNormal";
+import { AbcLimaDasar } from "./AbcLimaDasar";
+import { AbcLimaDasarRegister } from "./AbcLimaDasarRegister";
+import { AbcLimaDasarStart } from "./AbcLimaDasarStart";
 
 export class Messages {
 
@@ -12,7 +15,11 @@ export class Messages {
         const jankenNormal = new JankenNormal(interact, mode as string)
         const jankenAdvanced = new JankenAdvanced(interact, mode as string)
         // abc classes
-        // ####
+        // register
+        const abcRegister = new AbcLimaDasarRegister(interact)
+        // start
+        const categoryAmount = interact.options.get('category_amount')?.value
+        const abcStart = new AbcLimaDasarStart(interact, categoryAmount as number)
         // reply to user who interacted with slash commands
         switch(interact.commandName) {
             case 'greetings':
@@ -26,6 +33,7 @@ export class Messages {
                     // start
                     case 'janken_battle':
                         console.log(username, '> starting janken_battle command');
+                        // maintenis
                         // interact.reply({ content: 'janken sedang maintenis karna mudasir :skull:', flags: '4096' })
                         // run janken
                         mode === 'normal'
@@ -39,15 +47,21 @@ export class Messages {
                         break
                     // ABC GAME
                     // start
+                    case 'abc_stats':
+                        console.log(username, '> starting abc_stats command');
+                        // maintenis
+                        // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
+                        abcRegister.stats()
+                        break
+                    case 'abc_register':
+                        console.log(username, '> starting abc_register command');
+                        // maintenis
+                        // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
+                        abcRegister.register()
+                        break
                     case 'abc_start':
                         console.log(username, '> starting abc_start command');
-                        interact
-                        break
-                    case 'abc_join':
-                        console.log(username, '> starting abc_join command');
-                        break
-                    case 'abc_answer':
-                        console.log(username, '> starting abc_answer command');
+                        abcStart.start()
                         break
                 }
                 break

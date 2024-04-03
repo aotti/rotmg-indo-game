@@ -7,7 +7,7 @@ export class JankenAdvanced extends Janken {
         this.mode = mode
     }
 
-    protected fingerEmoji(finger: string): string {
+    protected fingerEmoji(finger: string) {
         const emoji = []
         switch(finger) {
             case 'rock': emoji.push(':punch:'); break

@@ -76,7 +76,7 @@ type dbUpdateType = {
     get updateColumn(): IUColumnType;
 }
 
-// insert / update column 
+// insert / update column for janken
 type IUColumnType = {
     id?: number;
     username?: string;
@@ -85,19 +85,42 @@ type IUColumnType = {
     draw: number;
 }
 
-// ~~ cipher ~~
-type encryptedType = {
-    iv: string;
-    encryptedText: string;
-    decryptedText?: string;
-    slicedEncrypted: string[]
+// ~~ abc 5 dasar ~~
+interface IABC_Response {
+    status: number;
+    message: string | PostgrestError | null;
+}
+
+interface IABC_Response_Stats extends IABC_Response {
+    data: {
+        id: number;
+        username: string;
+        game_played: number;
+        words_used: number;
+    }[];
+}
+
+interface IABC_Response_Register extends IABC_Response {
+    data: {
+        id: number;
+        username: string;
+    }[];
+}
+
+interface IABC_Response_Categories extends IABC_Response {
+    data: {
+        category: string;
+    }[]
 }
 
 export { 
+    // commands
     CommandsType, 
     SubCommandOptionsType,
+    // janken
     JankenModeType, 
     JankenPlayerType, 
+    // query
     dbSelectType, 
     dbInsertType, 
     dbUpdateType,
@@ -105,5 +128,8 @@ export {
     queryBuilderType,
     qbMethodType,
     dbReturnType,
-    encryptedType
+    // abc 5 dasar
+    IABC_Response_Stats,
+    IABC_Response_Register,
+    IABC_Response_Categories
 }
