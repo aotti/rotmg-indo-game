@@ -27,7 +27,7 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
         const fetchBody = {
             action: 'register player',
             payload: {
-                id: +playerId,
+                id: playerId,
                 username: username
             }
         }
@@ -35,12 +35,13 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
             method: 'POST',
             // headers is a must to send body
             headers: {
+                'Authorization': process.env['UUID_V4'],
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(fetchBody)
         }
         // fetching
-        const registerResponse: IABC_Response_Register = await this.abcFetcher(`/register`, fetchOptions)
+        const registerResponse: IABC_Response_Register = await this.abcFetcher(`/register/player`, fetchOptions)
         // create embed
         const registerEmbed = new EmbedBuilder().setTitle('Player Register')
         // check status
@@ -51,17 +52,19 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
                 registerEmbed.setDescription(`
                     Registration success!
                     ────────────────────
-                    id: ${playerData.id}
-                    username: ${playerData.username}
+                    **id:** ${playerData.id}
+                    **username:** ${playerData.username}
                 `)
                 await this.interact.reply({ embeds: [registerEmbed], flags: 'Ephemeral' })
                 break
-            case 401:
-                await this.interact.reply({ content: 'input data error', flags: 'Ephemeral' })
+            case 400:
+                await this.interact.reply({ content: `${registerResponse.message}`, flags: 'Ephemeral' })
                 break
             case 500:
                 await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(registerResponse.message)}*`, flags: '4096' })
                 break
+            default:
+                await this.interact.reply({ content: `register: unknown error\n${JSON.stringify(registerResponse)}`, flags: '4096' })
         }
     }
 

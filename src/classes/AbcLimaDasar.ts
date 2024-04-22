@@ -10,10 +10,14 @@ config({ path: envFilePath })
 export class AbcLimaDasar {
     protected interact: ChatInputCommandInteraction
     protected baseUrl: string
+    protected baseChannel: string
+    protected discordAPIUrl: string
 
     constructor(interact: ChatInputCommandInteraction) {
         this.interact = interact
         this.baseUrl = process.env['ABC_API'] || 'http://localhost:3000/api'
+        this.baseChannel = process.env['ABC_CHANNEL'] || '479503233157693443'
+        this.discordAPIUrl = 'https://discord.com/api/v10'
     }
     
     async stats() {
@@ -51,6 +55,8 @@ export class AbcLimaDasar {
             case 500:
                 await this.interact.reply({ content: `*server-side error\nerror: ${statsResponse.message}*`, flags: '4096' })
                 break
+            default:
+                await this.interact.reply({ content: `stats: unknown error\n${JSON.stringify(statsResponse)}`, flags: '4096' })
         }
     }
 
@@ -69,5 +75,18 @@ export class AbcLimaDasar {
                 data: []
             }
         }
+    }
+
+    protected indonesiaDatetime() {
+        const d = new Date()
+        // utc time
+        const localTime = d.getTime()
+        const localOffset = d.getTimezoneOffset() * 60_000
+        const utc = localTime + localOffset
+        // indonesia time
+        const indonesiaOffset = 7
+        const indonesiaTime = utc + (3_600_000 * indonesiaOffset)
+        const indonesiaNow = new Date(indonesiaTime)
+        return indonesiaNow.toLocaleDateString()
     }
 }

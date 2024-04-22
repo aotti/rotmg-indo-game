@@ -103,7 +103,7 @@ export class Commands {
                         },
                         {
                             type: ApplicationCommandOptionType.Integer,
-                            name: 'max_player',
+                            name: 'max_players',
                             description: 'set the limit of players who can join',
                             required: true,
                             choices: [

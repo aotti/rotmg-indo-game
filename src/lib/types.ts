@@ -85,7 +85,7 @@ type IUColumnType = {
     draw: number;
 }
 
-// ~~ abc 5 dasar ~~
+// ~~ abc 5 dasar api ~~
 interface IABC_Response {
     status: number;
     message: string | PostgrestError | null;
@@ -113,6 +113,39 @@ interface IABC_Response_Categories extends IABC_Response {
     }[]
 }
 
+interface IABC_Response_CreateRoom extends IABC_Response {
+    data: {
+        name: string;
+        password: string | null;
+        num_players: number;
+        max_players: number;
+        rules: string;
+    }[]
+}
+
+// ~~ threads ~~
+type Thread_Create_Success = {
+    id: string;
+    parent_id: string;
+    owner_id: string;
+    member_count: number;
+    thread_metadata: {
+        auto_archive_duration: number;
+    }
+}
+
+type Thread_Create_Fail = {
+    code: number;
+    message: string;
+    errors: object;
+}
+
+// ~~ playing game ~~
+type PlayerAnswersType = {
+    player_id: string;
+    answer: string;
+}
+
 export { 
     // commands
     CommandsType, 
@@ -131,5 +164,11 @@ export {
     // abc 5 dasar
     IABC_Response_Stats,
     IABC_Response_Register,
-    IABC_Response_Categories
+    IABC_Response_Categories,
+    IABC_Response_CreateRoom,
+    // threads
+    Thread_Create_Success,
+    Thread_Create_Fail,
+    // playing game
+    PlayerAnswersType
 }

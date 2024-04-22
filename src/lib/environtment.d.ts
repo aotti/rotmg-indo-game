@@ -7,6 +7,8 @@ declare global {
             DB_URL: string;
             DB_APIKEY: string;
             ABC_API: string;
+            UUID_V4: string;
+            ABC_CHANNEL: string;
         }
     }
   }

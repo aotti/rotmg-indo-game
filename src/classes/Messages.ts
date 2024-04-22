@@ -61,6 +61,8 @@ export class Messages {
                         break
                     case 'abc_start':
                         console.log(username, '> starting abc_start command');
+                        // maintenis
+                        // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
                         abcStart.start()
                         break
                 }
