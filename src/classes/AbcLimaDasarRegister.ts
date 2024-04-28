@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { AbcLimaDasar } from "./AbcLimaDasar";
-import { IABC_Response_Register } from "../lib/types";
+import { FetchBodyType, IABC_Response_Register } from "../lib/types";
 
 export class AbcLimaDasarRegister extends AbcLimaDasar{
     
@@ -12,7 +12,7 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
     async register() {
         // stuff for fetch
         const playerId = this.interact.user.id
-        const username = this.interact.options.get('username')?.value as string
+        const username = (this.interact.member as any).nickname || this.interact.user.displayName
         // check id
         const [idStatus, idError] = this.checkId(playerId)
         if(idStatus) {
@@ -24,7 +24,7 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
             return await this.interact.reply({ content: usernameError as string, flags: 'Ephemeral' })
         }
         // fetch stuff
-        const fetchBody = {
+        const fetchBody: FetchBodyType = {
             action: 'register player',
             payload: {
                 id: playerId,
@@ -35,8 +35,8 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
             method: 'POST',
             // headers is a must to send body
             headers: {
-                'Authorization': process.env['UUID_V4'],
-                'Content-Type': 'application/json'
+                'authorization': process.env['UUID_V4'],
+                'content-type': 'application/json' // required for body
             },
             body: JSON.stringify(fetchBody)
         }
@@ -81,8 +81,8 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
 
     protected usernameLength(username: string): [boolean, string | null] {
         // check username length
-        if(username.length > 30) {
-            const message = "jumlah karakter tidak boleh lebih dari 30 huruf!" +
+        if(username.length < 3 && username.length > 30) {
+            const message = "jumlah karakter harus diantara 3 ~ 30 huruf!" +
                             `\nusername anda memiliki **${username.length} huruf**`
             return [true, message]
         }

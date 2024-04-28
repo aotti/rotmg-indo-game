@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { IABC_Response_Stats } from "../lib/types";
+import { FetchBodyType, IABC_Response_Profile, PlayingDataType } from "../lib/types";
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
@@ -12,51 +12,73 @@ export class AbcLimaDasar {
     protected baseUrl: string
     protected baseChannel: string
     protected discordAPIUrl: string
+    // for collecting required data while playing
+    // ### COBA BUAT STATIC VARIABLE
+    protected static playingData: PlayingDataType = {
+        room_id: 0,
+        round_number: 0,
+        game_rounds: 0,
+        categories: [],
+        num_players: {
+            message_id: '',
+            count: 0
+        },
+        max_players: 0,
+        game_status: '', // not room status
+        player_data: []
+    }
 
     constructor(interact: ChatInputCommandInteraction) {
         this.interact = interact
         this.baseUrl = process.env['ABC_API'] || 'http://localhost:3000/api'
-        this.baseChannel = process.env['ABC_CHANNEL'] || '479503233157693443'
+        this.baseChannel = process.env['ABC_CHANNEL'] || '491548301162840074'
         this.discordAPIUrl = 'https://discord.com/api/v10'
     }
     
-    async stats() {
+    async profile() {
         // stuff for fetch
-        const playerId = +this.interact.user.id
+        const playerId = this.interact.user.id
         const fetchOptions: RequestInit = { method: 'GET' }
         // fetching
-        const statsResponse: IABC_Response_Stats = await this.abcFetcher(`/profile/${playerId}`, fetchOptions)
+        const profileResponse: IABC_Response_Profile = await this.abcFetcher(`/profile/${playerId}`, fetchOptions)
         // create embed
-        const statsEmbed = new EmbedBuilder().setTitle('Player Stats')
+        const profileDescription = `**words correct** \n number of words answered correctly
+                                    **words used** \n number of words answered either its right/wrong
+                                    ────────────────────`
+        const profileEmbed = new EmbedBuilder()
+            .setTitle('Player Stats')
+            .setDescription(profileDescription)
         // check status
-        switch(statsResponse.status) {
+        switch(profileResponse.status) {
             case 200:
-                const playerData = statsResponse.data[0]
+                const playerData = profileResponse.data[0]
                 // check if data is empty
                 if(playerData == null) {
-                    statsEmbed.addFields({
-                        name: statsResponse.message as string,
-                        value: 'You have to register to see your stats'
+                    profileEmbed.addFields({
+                        name: profileResponse.message as string,
+                        value: 'You have to register to see your profile'
                     })
-                    await this.interact.reply({ embeds: [statsEmbed], flags: 'Ephemeral' })
+                    await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
                     break
                 }
                 // fill the embed with player data
-                statsEmbed.addFields({
+                const profileValue = "`Game Played  :` " + playerData.game_played +
+                                     "\n`Words Correct:` " + playerData.words_correct +
+                                     "\n`Words Used   :` " + playerData.words_used 
+                profileEmbed.addFields({
                     name: playerData.username,
-                    value: `game: ${playerData.game_played}
-                            words used: ${playerData.words_used}`
+                    value: profileValue
                 })
-                await this.interact.reply({ embeds: [statsEmbed], flags: 'Ephemeral' })
+                await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
                 break
             case 400:
-                await this.interact.reply({ content: 'input data error', flags: 'Ephemeral' })
+                await this.interact.reply({ content: `${profileResponse.message}`, flags: 'Ephemeral' })
                 break
             case 500:
-                await this.interact.reply({ content: `*server-side error\nerror: ${statsResponse.message}*`, flags: '4096' })
+                await this.interact.reply({ content: `*server-side error\nerror: ${profileResponse.message}*`, flags: '4096' })
                 break
             default:
-                await this.interact.reply({ content: `stats: unknown error\n${JSON.stringify(statsResponse)}`, flags: '4096' })
+                await this.interact.reply({ content: `stats: unknown error\n${JSON.stringify(profileResponse)}`, flags: '4096' })
         }
     }
 
@@ -88,5 +110,9 @@ export class AbcLimaDasar {
         const indonesiaTime = utc + (3_600_000 * indonesiaOffset)
         const indonesiaNow = new Date(indonesiaTime)
         return indonesiaNow.toLocaleDateString()
+    }
+
+    protected createFetchBody<T extends FetchBodyType>(data: T) {
+        return {...data}
     }
 }

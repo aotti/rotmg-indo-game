@@ -4,6 +4,7 @@ import { JankenNormal } from "./JankenNormal";
 import { AbcLimaDasar } from "./AbcLimaDasar";
 import { AbcLimaDasarRegister } from "./AbcLimaDasarRegister";
 import { AbcLimaDasarStart } from "./AbcLimaDasarStart";
+import { AbcLimaDasarJoin } from "./AbcLimaDasarJoin";
 
 export class Messages {
 
@@ -20,6 +21,8 @@ export class Messages {
         // start
         const categoryAmount = interact.options.get('category_amount')?.value
         const abcStart = new AbcLimaDasarStart(interact, categoryAmount as number)
+        // join
+        const abcJoin = new AbcLimaDasarJoin(interact)
         // reply to user who interacted with slash commands
         switch(interact.commandName) {
             case 'greetings':
@@ -47,11 +50,11 @@ export class Messages {
                         break
                     // ABC GAME
                     // start
-                    case 'abc_stats':
-                        console.log(username, '> starting abc_stats command');
+                    case 'abc_profile':
+                        console.log(username, '> starting abc_profile command');
                         // maintenis
                         // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
-                        abcRegister.stats()
+                        abcRegister.profile()
                         break
                     case 'abc_register':
                         console.log(username, '> starting abc_register command');
@@ -64,6 +67,12 @@ export class Messages {
                         // maintenis
                         // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
                         abcStart.start()
+                        break
+                    case 'abc_join':
+                        console.log(username, '> starting abc_join command');
+                        // maintenis
+                        // interact.reply({ content: 'abc 5 bapak sedang maintenis :skull:', flags: '4096' })
+                        abcJoin.join()
                         break
                 }
                 break

@@ -56,24 +56,19 @@ export class Commands {
                     options: []
                 },
                 // ~~~ ABC 5 DASAR COMMANDS ~~~
+                // profile
                 {
                     type: ApplicationCommandOptionType.Subcommand,
-                    name: 'abc_stats',
-                    description: 'check abc 5 dasar player stats'
+                    name: 'abc_profile',
+                    description: 'check abc 5 dasar player profile'
                 },
+                // register
                 {
                     type: ApplicationCommandOptionType.Subcommand,
                     name: 'abc_register',
-                    description: 'register your data to play abc 5 dasar',
-                    options: [
-                        {
-                            type: ApplicationCommandOptionType.String,
-                            name: 'username',
-                            description: 'username will be lowercase no matter what; characters: alphabet, number, - or _',
-                            required: true
-                        }
-                    ]
+                    description: 'register your data to play abc 5 dasar'
                 },
+                // start
                 {
                     type: ApplicationCommandOptionType.Subcommand,
                     name: 'abc_start',
@@ -125,6 +120,19 @@ export class Commands {
                             type: ApplicationCommandOptionType.String,
                             name: 'room_password',
                             description: '(OPTIONAL) if you wanna play private game'
+                        }
+                    ]
+                },
+                // join
+                {
+                    type: ApplicationCommandOptionType.Subcommand,
+                    name: 'abc_join',
+                    description: 'join to current abc 5 dasar game',
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.String,
+                            name: 'password',
+                            description: 'input password to join the game'
                         }
                     ]
                 }
