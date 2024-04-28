@@ -64,7 +64,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             payload: gameStartData
         })
         const fetchOptionsCreate: RequestInit = {
-            method: 'POST',
+            method: 'POST', 
             headers: {
                 'authorization': process.env['UUID_V4'],
                 'user-id': this.interact.user.id,
@@ -225,7 +225,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         // get answer status
                         const playerAnswerStatus = AbcLimaDasar.playingData.player_data.map(v => {
                             if(v.answer_status === true)
-                                return v.answer_status
+                                return v.answer_status 
                         }).filter(i => i)
                         // if theres only 1 answer OR answer length < total player joined, stop
                         if(playerAnswerStatus.length === 1 || playerAnswerStatus.length < AbcLimaDasar.playingData.player_data.length) return 
@@ -251,8 +251,6 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                     await gameRoom.send({ content: `get words: unknown error\n${JSON.stringify(wordsResponse)}`, flags: '4096' })
                             }
                         }
-                        console.log(wordsContainer);
-                        
                         
                         // game result
                         const gameResultInfo = []
@@ -303,6 +301,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                 game_rounds: AbcLimaDasar.playingData.game_rounds,
                                 player_id: player_data.player_id,
                                 answer_id: player_data.answer_id[round_number - 1],
+                                answer_words: player_data.answer_words[round_number - 1],
                                 answer_points: player_data.answer_points
                             })
                         }
