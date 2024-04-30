@@ -226,7 +226,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         // update player answer status
                         AbcLimaDasar.playingData.player_data[isPlayerJoined].answer_status = true
                         // push answer
-                        tempAnswers.push({ player_id: msg.author.id, answer: msg.content })
+                        tempAnswers.push({ player_id: msg.author.id, answer: msg.content.toLowerCase() })
                         // give react to the answer
                         msg.react('608521889945485312')
                         // get answer status
