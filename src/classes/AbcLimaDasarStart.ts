@@ -14,7 +14,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
         // only run the game in base channel
         if(this.interact.channelId !== this.baseChannel) {
             return await this.interact.reply({
-                content: `this game only allowed in <#${this.baseChannel}> channel :sob:`,
+                content: `this command only allowed in <#${this.baseChannel}> channel :sob:`,
                 flags: 'Ephemeral'
             })
         }
@@ -31,7 +31,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
         // loop to get categories
         for(let i=0; i<this.categoryAmount; i++) {
             // create buttons and interaction for category
-            const category = await this.categoryButtonInteraction()
+            const category = await this.categoryButtonInteraction(i)
             if(category === null) return // fail to create buttons
             // check if the category is already exist
             const isCategoryExist = chosenCategories.indexOf(category)
@@ -104,9 +104,6 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 // create thread success
                 const createThreadSuccess = createThread as Thread_Create_Success
                 await this.interact.editReply({ content: `ABC 5 Dasar room <#${createThreadSuccess.id}> created!` })
-                // send game started for others
-                // const discordUsername = (this.interact.member as any).nickname || this.interact.user.displayName
-                // await this.interact.followUp({ content: `${discordUsername} started abc 5 dasar game :eyes:`, flags: '4096' })
                 // update fetching stuff
                 const fetchBodyUpdate = this.createFetchBody({
                     action: 'update room',
@@ -182,6 +179,14 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     answer_points: 0,
                     answer_status: false
                 })
+                // send game started for others
+                const discordUsername = (this.interact.member as any).nickname || this.interact.user.displayName
+                const gameStartedInfo = await this.interact.followUp({ content: `**${discordUsername}** started abc 5 dasar game :eyes:`, flags: '4096' })
+                // delete message after 30 mins
+                setTimeout(() => {
+                    gameStartedInfo.delete()
+                }, 1800_0e3);
+                // game is running
                 this.playing(gameRoom)
                 break
             case 400:
@@ -196,9 +201,11 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
     }
 
     private async playing(gameRoom: ThreadChannel) {
+        const tempThis = this
         // countdown 
         gameRoom.send('Starting in 3 seconds...')
-        setTimeout(() => {// round number info
+        setTimeout(() => {
+            // round number info
             const gameRoundNumber = `Round ${AbcLimaDasar.playingData.round_number} :fire:` +
                                     "\n---------------------------"
             gameRoom.send(gameRoundNumber)
@@ -206,7 +213,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             // declare outside listener to prevent data loss when any return fired
             let tempAnswers: {player_id: string, answer: string}[] = []
             // listen to user messages 
-            gameRoom.client.on('messageCreate', async (msg) => {
+            gameRoom.client.on('messageCreate', async function gameAnswersListener(msg) {
                 // listen only to the game room & ignore msg from bot 
                 if(msg.channelId !== gameRoom.id || msg.author.bot) return
                 // check if player exist
@@ -235,7 +242,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         for(let category of AbcLimaDasar.playingData.categories) {
                             // fetching stuff
                             const fetchOptionsWords: RequestInit = { method: 'GET' }
-                            const wordsResponse: IABC_Response_GetWords = await this.abcFetcher(`/word/${category}`, fetchOptionsWords)
+                            const wordsResponse: IABC_Response_GetWords = await tempThis.abcFetcher(`/word/${category}`, fetchOptionsWords)
                             switch(wordsResponse.status) {
                                 case 200:
                                     // push id and word to container
@@ -261,7 +268,8 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                             let [idCounter, correctCounter, pointsCounter]: CounterReturnType = [0, '', 0]
                             // match the answer
                             const isCorrect = wordsContainer.map(v => {
-                                if(v.word.match(player.answer))
+                                const matching = v.word.split(', ').indexOf(player.answer)
+                                if(matching !== -1)
                                     return [v.id, v.word] as [number, string]
                             }).filter(i=>i)[0]
                             // match result
@@ -306,7 +314,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                             })
                         }
                         // fetching stuff for abc_rounds 
-                        const fetchBodyRounds = this.createFetchBody({
+                        const fetchBodyRounds = tempThis.createFetchBody({
                             action: 'insert rounds',
                             // send player_id, room_id, word_id, round_number, game_rounds, answer_points (words_correct)
                             payload: tempRoundsPayload
@@ -316,13 +324,13 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                             // headers is a must to send body
                             headers: {
                                 'authorization': process.env['UUID_V4'],
-                                'user-id': this.interact.user.id,
+                                'user-id': tempThis.interact.user.id,
                                 'content-type': 'application/json' // required for body
                             },
                             body: JSON.stringify(fetchBodyRounds)
                         }
                         // insert data to abc_rounds each round
-                        const roundsResponse: IABC_Response_Rounds = await this.abcFetcher('/round/insert', fetchOptionsRounds)
+                        const roundsResponse: IABC_Response_Rounds = await tempThis.abcFetcher('/round/insert', fetchOptionsRounds)
                         switch(roundsResponse.status) {
                             case 200: 
                                 msg.react('🐱')
@@ -339,7 +347,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         // round number == game rounds, game over
                         const [round_number, game_rounds] = [AbcLimaDasar.playingData.round_number, AbcLimaDasar.playingData.game_rounds]
                         if(round_number === game_rounds) {
-                            this.gameOver(gameRoom, gameResultInfo)
+                            tempThis.gameOver(gameRoom, gameResultInfo)
                         }
                         // next round
                         else if(round_number < game_rounds) {
@@ -350,8 +358,10 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                             for(let player of player_data) {
                                 player.answer_status = false
                             }
+                            // turn off listener before start next round
+                            gameRoom.client.removeListener('messageCreate', gameAnswersListener)
                             // start next round 
-                            this.playing(gameRoom)
+                            tempThis.playing(gameRoom)
                         }
                     }
                 }
@@ -360,19 +370,19 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
     }
 
     private async gameOver(gameRoom: ThreadChannel, gameResultInfo: string[]) {
-        // lock the room
-        gameRoom.setLocked(true, 'game over')
         // send game over message
-        const gameOverInfo = `Game Over :pray: \nhere is the result: \n${gameResultInfo.join('\n')}` 
+        const gameOverInfo = `Game Over :pray: \nhere is the result: \n${gameResultInfo.join('\n')}`  
         const gameOverInfoId = (await gameRoom.send(gameOverInfo)).id
-        // update player profile
-        // player_id, game_played, words_correct, words_used
+        // wink emojis for update
+        const winkArray: string[] = []
         // loop player data
         for(let player_data of AbcLimaDasar.playingData.player_data) {
+            winkArray.push(':wink:')
             // fetching stuff
             const fetchBodyProfile = this.createFetchBody({
                 action: 'update profile',
                 payload: {
+                    // player_id, game_played, words_correct, words_used
                     player_id: player_data.player_id,
                     game_played: 1,
                     words_correct: player_data.answer_id.filter(v => v !== 0).length,
@@ -389,24 +399,14 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 },
                 body: JSON.stringify(fetchBodyProfile)
             } 
-            // update profile
+            // update player profile
             const profileResponse: IABC_Response_Profile = await this.abcFetcher('/profile/update', fetchOptionsProfile)
             switch(profileResponse.status) {
                 case 200:
-                    // reset all playind data values
-                    AbcLimaDasar.playingData.room_id = 0
-                    AbcLimaDasar.playingData.round_number = 0
-                    AbcLimaDasar.playingData.game_rounds = 0
-                    AbcLimaDasar.playingData.categories = []
-                    AbcLimaDasar.playingData.num_players.count = 0
-                    AbcLimaDasar.playingData.num_players.message_id = ''
-                    AbcLimaDasar.playingData.max_players = 0
-                    AbcLimaDasar.playingData.game_status = ''
-                    AbcLimaDasar.playingData.player_data = []
                     // profile updated message
                     const editGameOverInfo = gameOverInfo + 
                                             "\n---------------------------" +
-                                            "\nplayer profiles updated :wink:"
+                                            "\nplayer profiles updated " + winkArray.join(' ')
                     await gameRoom.messages.cache.get(gameOverInfoId)?.edit(editGameOverInfo)
                     break
                 case 400:
@@ -419,10 +419,52 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     await gameRoom.send({ content: `stats: unknown error\n${JSON.stringify(profileResponse)}`, flags: '4096' })
             }
         }
+        // fetching stuff for update room
+        const fetchBodyUpdate = this.createFetchBody({
+            action: 'update room',
+            payload: {
+                id: AbcLimaDasar.playingData.room_id,
+                status: 'closed'
+            }
+        })
+        const fetchOptionsUpdate: RequestInit = {
+            method: 'PATCH', 
+            headers: {
+                'authorization': process.env['UUID_V4'],
+                'user-id': this.interact.user.id,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(fetchBodyUpdate) 
+        }
+        // update room status
+        const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
+        switch(updateRoomResponse.status) {
+            case 200:
+                await gameRoom.messages.cache.get(gameOverInfoId)?.react('🚪')
+                // reset all playind data values
+                AbcLimaDasar.playingData.room_id = 0
+                AbcLimaDasar.playingData.round_number = 0
+                AbcLimaDasar.playingData.game_rounds = 0
+                AbcLimaDasar.playingData.categories = []
+                AbcLimaDasar.playingData.num_players.count = 0
+                AbcLimaDasar.playingData.num_players.message_id = ''
+                AbcLimaDasar.playingData.max_players = 0
+                AbcLimaDasar.playingData.game_status = ''
+                AbcLimaDasar.playingData.player_data = []
+                // lock the room, auto archive in 1 hour
+                await gameRoom.setLocked(true, 'game over')
+                break
+            case 400:
+                await this.interact.followUp({ content: `${updateRoomResponse.message}`, flags: 'Ephemeral' })
+                break
+            case 500:
+                await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(updateRoomResponse.message)}*`, flags: '4096' })
+                break
+        }
     }
 
     // ~~ utility method ~~
-    protected async categoryButtonInteraction() {
+    protected async categoryButtonInteraction(i: number) {
         // fetch stuff
         const fetchOptions: RequestInit = { method: 'GET' }
         const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
@@ -451,7 +493,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             const categoryRow_2 = new ActionRowBuilder<ButtonBuilder>().addComponents(categoryButtons[1])
             // display button
             const buttonResponse = await this.interact.editReply({
-                content: `Select categories:`,
+                content: `Select category ${i}:`,
                 // ### MAX 5 BUTTONS FOR EACH ROW
                 components: [categoryRow_1, categoryRow_2]
             })

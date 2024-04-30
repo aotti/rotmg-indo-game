@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, ThreadChannel } from "discord.js"
+import { ThreadChannel } from "discord.js"
 import { AbcLimaDasar } from "./AbcLimaDasar"
-import { FetchBodyType, IABC_Response_JoinRoom, IABC_Response_UpdateRoom } from "../lib/types"
+import { IABC_Response_JoinRoom, IABC_Response_UpdateRoom } from "../lib/types"
 
 export class AbcLimaDasarJoin extends AbcLimaDasar {
 
@@ -60,15 +60,14 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                     content: `click this link to join the room :flushed:\n<#${joinData.thread_id}>`, 
                     flags: 'Ephemeral' 
                 })
-                // ### update rooms table after success join the room
-                // ### update rooms table after success join the room
-                const fetchBodyUpdate: FetchBodyType = {
+                // fetching stuff for update room
+                const fetchBodyUpdate = this.createFetchBody({
                     action: 'update room',
                     payload: {
                         id: joinData.id,
                         num_players: joinData.num_players + 1
                     }
-                }
+                })
                 const fetchOptionsUpdate: RequestInit = {
                     method: 'PATCH', 
                     headers: {
