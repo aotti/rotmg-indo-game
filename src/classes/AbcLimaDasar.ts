@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { FetchBodyType, IABC_Response_Profile, PlayingDataType } from "../lib/types";
+import { FetchBodyType, IABC_Response_Profile, PlayingDataType } from "../lib/types.js";
 import { config } from 'dotenv'
 import { resolve } from 'path'
 

@@ -1,6 +1,6 @@
 import { REST, Routes, ApplicationCommandOptionType } from 'discord.js'
-import { CommandsType, SubCommandOptionsType } from '../lib/types';
-import { Janken } from './Janken';
+import { CommandsType, SubCommandOptionsType } from '../lib/types.js';
+import { Janken } from './Janken.js';
 
 export class Commands {
     // command list

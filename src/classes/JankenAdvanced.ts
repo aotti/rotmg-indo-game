@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction } from "discord.js";
-import { Janken } from "./Janken";
+import { Janken } from "./Janken.js";
 
 export class JankenAdvanced extends Janken {
     constructor(interact: ChatInputCommandInteraction, mode: string) {

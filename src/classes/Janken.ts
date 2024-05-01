@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types";
-import { DatabaseQueries } from "../lib/DatabaseQueries";
-import { Commands } from "./Commands";
+import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types.js";
+import { DatabaseQueries } from "../lib/DatabaseQueries.js";
+import { Commands } from "./Commands.js";
 
 export class Janken {
     protected static playerArray: JankenModeType = {

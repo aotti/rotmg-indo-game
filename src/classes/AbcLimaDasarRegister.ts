@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { AbcLimaDasar } from "./AbcLimaDasar";
-import { FetchBodyType, IABC_Response_Register } from "../lib/types";
+import { AbcLimaDasar } from "./AbcLimaDasar.js";
+import { FetchBodyType, IABC_Response_Register } from "../lib/types.js";
 
 export class AbcLimaDasarRegister extends AbcLimaDasar{
     

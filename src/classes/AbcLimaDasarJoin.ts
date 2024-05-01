@@ -1,6 +1,6 @@
 import { ThreadChannel } from "discord.js"
-import { AbcLimaDasar } from "./AbcLimaDasar"
-import { IABC_Response_JoinRoom, IABC_Response_UpdateRoom } from "../lib/types"
+import { AbcLimaDasar } from "./AbcLimaDasar.js"
+import { IABC_Response_JoinRoom, IABC_Response_UpdateRoom } from "../lib/types.js"
 
 export class AbcLimaDasarJoin extends AbcLimaDasar {
 

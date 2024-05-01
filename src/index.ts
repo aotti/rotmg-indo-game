@@ -1,8 +1,8 @@
 import { Client, IntentsBitField } from 'discord.js'
 import { config } from 'dotenv'
 import { resolve } from 'path'
-import { Commands } from './classes/Commands';
-import { Messages } from './classes/Messages';
+import { Commands } from './classes/Commands.js';
+import { Messages } from './classes/Messages.js';
 
 // set the env file
 const envFilePath = resolve(process.cwd(), '.env')

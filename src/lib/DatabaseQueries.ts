@@ -1,5 +1,5 @@
-import { supabase } from "./database";
-import { dbInsertType, dbReturnType, dbSelectType, dbUpdateType, IUColumnType, qbMethodType, queryBuilderType } from "./types";
+import { supabase } from "./database.js";
+import { dbInsertType, dbReturnType, dbSelectType, dbUpdateType, IUColumnType, qbMethodType, queryBuilderType } from "./types.js";
 
 export class DatabaseQueries {
 

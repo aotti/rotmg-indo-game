@@ -1,10 +1,9 @@
 import { ChatInputCommandInteraction } from "discord.js";
-import { JankenAdvanced } from "./JankenAdvanced";
-import { JankenNormal } from "./JankenNormal";
-import { AbcLimaDasar } from "./AbcLimaDasar";
-import { AbcLimaDasarRegister } from "./AbcLimaDasarRegister";
-import { AbcLimaDasarStart } from "./AbcLimaDasarStart";
-import { AbcLimaDasarJoin } from "./AbcLimaDasarJoin";
+import { JankenAdvanced } from "./JankenAdvanced.js";
+import { JankenNormal } from "./JankenNormal.js";
+import { AbcLimaDasarRegister } from "./AbcLimaDasarRegister.js";
+import { AbcLimaDasarStart } from "./AbcLimaDasarStart.js";
+import { AbcLimaDasarJoin } from "./AbcLimaDasarJoin.js";
 
 export class Messages {
 
