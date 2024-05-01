@@ -8,9 +8,9 @@ Bot untuk games di server rotmg indonesia
 
 #### ABC 5 Dasar
 - ERD
-<img src="https://github.com/aotti/chatting-app/blob/main/docs/images/abc_5_dasar_erd.png" width="70%" height="70%">
+<img src="https://github.com/aotti/rotmg-indo-game/blob/main/docs/images/abc_5_dasar_erd.png" width="70%" height="70%">
 
 - Flowchart
-<img src="https://github.com/aotti/chatting-app/blob/main/docs/images/abc_5_dasar_flowchart.png" width="70%" height="70%">
+<img src="https://github.com/aotti/rotmg-indo-game/blob/main/docs/images/abc_5_dasar_flowchart.png" width="70%" height="70%">
 
 @aotti
