@@ -216,6 +216,7 @@ export {
     // fetching
     FetchBodyType,
     // abc 5 dasar
+    IABC_Response,
     IABC_Response_Profile,
     IABC_Response_Register,
     IABC_Response_Categories,

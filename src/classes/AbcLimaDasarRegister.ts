@@ -24,22 +24,14 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
             return await this.interact.reply({ content: usernameError as string, flags: 'Ephemeral' })
         }
         // fetch stuff
-        const fetchBody: FetchBodyType = {
+        const fetchBody = this.createFetchBody({
             action: 'register player',
             payload: {
                 id: playerId,
                 username: username
             }
-        }
-        const fetchOptions: RequestInit = {
-            method: 'POST',
-            // headers is a must to send body
-            headers: {
-                'authorization': process.env['UUID_V4'],
-                'content-type': 'application/json' // required for body
-            },
-            body: JSON.stringify(fetchBody)
-        }
+        })
+        const fetchOptions = this.createFetchOptions('POST', fetchBody)!
         // fetching
         const registerResponse: IABC_Response_Register = await this.abcFetcher(`/register/player`, fetchOptions)
         // create embed
@@ -57,14 +49,10 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
                 `)
                 await this.interact.reply({ embeds: [registerEmbed], flags: 'Ephemeral' })
                 break
-            case 400:
-                await this.interact.reply({ content: `${registerResponse.message}`, flags: 'Ephemeral' })
+            case 400: case 500: default:
+                // normal reply
+                this.abcFetcherErrors(null, registerResponse.status, registerResponse, false)
                 break
-            case 500:
-                await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(registerResponse.message)}*`, flags: '4096' })
-                break
-            default:
-                await this.interact.reply({ content: `register: unknown error\n${JSON.stringify(registerResponse)}`, flags: '4096' })
         }
     }
 

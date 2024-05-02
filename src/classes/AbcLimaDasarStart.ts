@@ -63,15 +63,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             action: 'create room',
             payload: gameStartData
         })
-        const fetchOptionsCreate: RequestInit = {
-            method: 'POST', 
-            headers: {
-                'authorization': process.env['UUID_V4'],
-                'user-id': this.interact.user.id,
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify(fetchBodyCreate)
-        }
+        const fetchOptionsCreate = this.createFetchOptions('POST', fetchBodyCreate)!
         // insert data to abc_rooms
         const createRoomResponse: IABC_Response_CreateRoom = await this.abcFetcher('/room/create', fetchOptionsCreate)
         // check status
@@ -112,15 +104,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         thread_id: createThreadSuccess.id
                     }
                 })
-                const fetchOptionsUpdate: RequestInit = {
-                    method: 'PATCH', 
-                    headers: {
-                        'authorization': process.env['UUID_V4'],
-                        'user-id': this.interact.user.id,
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify(fetchBodyUpdate) 
-                }
+                const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
                 // update thread_id, the bot can summon the room
                 const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
                 switch(updateRoomResponse.status) {
@@ -128,11 +112,8 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         const updateData = updateRoomResponse.data[0]
                         await this.interact.editReply({ content: `ABC 5 Dasar room <#${updateData.thread_id}> created! :wink:` })
                         break
-                    case 400:
-                        await this.interact.followUp({ content: `${updateRoomResponse.message}`, flags: 'Ephemeral' })
-                        break
-                    case 500:
-                        await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(updateRoomResponse.message)}*`, flags: '4096' })
+                    case 400: case 500: default:
+                        this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
                         break
                 }
                 // fetch thread channel for bot to send & listen to messages
@@ -182,21 +163,39 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 // send game started for others
                 const discordUsername = (this.interact.member as any).nickname || this.interact.user.displayName
                 const gameStartedInfo = await this.interact.followUp({ content: `**${discordUsername}** started abc 5 dasar game :eyes:`, flags: '4096' })
-                // delete message after 30 mins
-                setTimeout(() => {
+                // delete message and lock the room after 30 mins
+                setTimeout(async () => {
+                    gameRoom.setLocked(true, 'no one join')
+                    // update room status
+                    // fetching stuff for update room
+                    const fetchBodyUpdate = this.createFetchBody({
+                        action: 'update room',
+                        payload: {
+                            id: AbcLimaDasar.playingData.room_id,
+                            status: 'closed'
+                        }
+                    })
+                    const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
+                    // update room status
+                    const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
+                    switch(updateRoomResponse.status) {
+                        case 200:
+                            await gameRoom.send({ content: 'game canceled', flags: '4096' })
+                            break
+                        case 400: case 500: default:
+                            // follow up
+                            this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
+                            break
+                    }
                     gameStartedInfo.delete()
                 }, 1800_0e3);
                 // game is running
                 this.playing(gameRoom)
                 break
-            case 400:
-                await this.interact.followUp({ content: `${createRoomResponse.message}`, flags: 'Ephemeral' })
+            case 400: case 500: default:
+                // follow up
+                this.abcFetcherErrors(null, createRoomResponse.status, createRoomResponse, true)
                 break
-            case 500:
-                await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(createRoomResponse.message)}*`, flags: '4096' })
-                break
-            default:
-                await this.interact.followUp({ content: `create room: unknown error\n${JSON.stringify(createRoomResponse)}`, flags: '4096' })
         }
     }
 
@@ -241,21 +240,17 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         const wordsContainer: {id: number; word: string}[] = []
                         for(let category of AbcLimaDasar.playingData.categories) {
                             // fetching stuff
-                            const fetchOptionsWords: RequestInit = { method: 'GET' }
+                            const fetchOptionsWords = tempThis.createFetchOptions('GET')!
                             const wordsResponse: IABC_Response_GetWords = await tempThis.abcFetcher(`/word/${category}`, fetchOptionsWords)
                             switch(wordsResponse.status) {
                                 case 200:
                                     // push id and word to container
                                     wordsResponse.data.map(v => wordsContainer.push({id: v.id, word: v.word}))
                                     break
-                                case 400:
-                                    await gameRoom.send({ content: `${wordsResponse.message}`, flags: '4096' })
+                                case 400: case 500: default:
+                                    // gameroom
+                                    tempThis.abcFetcherErrors(gameRoom, wordsResponse.status, wordsResponse, false)
                                     break
-                                case 500:
-                                    await gameRoom.send({ content: `*server-side error\nerror: ${JSON.stringify(wordsResponse.message)}*`, flags: '4096' })
-                                    break
-                                default:
-                                    await gameRoom.send({ content: `get words: unknown error\n${JSON.stringify(wordsResponse)}`, flags: '4096' })
                             }
                         }
                         
@@ -319,30 +314,17 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                             // send player_id, room_id, word_id, round_number, game_rounds, answer_points (words_correct)
                             payload: tempRoundsPayload
                         })
-                        const fetchOptionsRounds: RequestInit = {
-                            method: 'POST',
-                            // headers is a must to send body
-                            headers: {
-                                'authorization': process.env['UUID_V4'],
-                                'user-id': tempThis.interact.user.id,
-                                'content-type': 'application/json' // required for body
-                            },
-                            body: JSON.stringify(fetchBodyRounds)
-                        }
+                        const fetchOptionsRounds = tempThis.createFetchOptions('POST', fetchBodyRounds)!
                         // insert data to abc_rounds each round
                         const roundsResponse: IABC_Response_Rounds = await tempThis.abcFetcher('/round/insert', fetchOptionsRounds)
                         switch(roundsResponse.status) {
                             case 200: 
                                 msg.react('🐱')
                                 break
-                            case 400:
-                                await gameRoom.send({ content: `${roundsResponse.message}`, flags: '4096' })
+                            case 400: case 500: default:
+                                // gameroom
+                                tempThis.abcFetcherErrors(gameRoom, roundsResponse.status, roundsResponse, false)
                                 break
-                            case 500:
-                                await gameRoom.send({ content: `*server-side error\nerror: ${JSON.stringify(roundsResponse.message)}*`, flags: '4096' })
-                                break
-                            default:
-                                await gameRoom.send({ content: `insert rounds: unknown error\n${JSON.stringify(roundsResponse)}`, flags: '4096' })
                         }
                         // round number == game rounds, game over
                         const [round_number, game_rounds] = [AbcLimaDasar.playingData.round_number, AbcLimaDasar.playingData.game_rounds]
@@ -389,16 +371,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     words_used: player_data.answer_id.length
                 }
             })
-            const fetchOptionsProfile: RequestInit = {
-                method: 'PATCH',
-                // headers is a must to send body 
-                headers: {
-                    'authorization': process.env['UUID_V4'],
-                    'user-id': this.interact.user.id,
-                    'content-type': 'application/json' // required for body
-                },
-                body: JSON.stringify(fetchBodyProfile)
-            } 
+            const fetchOptionsProfile = this.createFetchOptions('PATCH', fetchBodyProfile)!
             // update player profile
             const profileResponse: IABC_Response_Profile = await this.abcFetcher('/profile/update', fetchOptionsProfile)
             switch(profileResponse.status) {
@@ -409,14 +382,10 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                             "\nplayer profiles updated " + winkArray.join(' ')
                     await gameRoom.messages.cache.get(gameOverInfoId)?.edit(editGameOverInfo)
                     break
-                case 400:
-                    await gameRoom.send({ content: `${profileResponse.message}`, flags: '4096' })
+                case 400: case 500: default:
+                    // gameroom
+                    this.abcFetcherErrors(gameRoom, profileResponse.status, profileResponse, false)
                     break
-                case 500:
-                    await gameRoom.send({ content: `*server-side error\nerror: ${profileResponse.message}*`, flags: '4096' })
-                    break
-                default:
-                    await gameRoom.send({ content: `stats: unknown error\n${JSON.stringify(profileResponse)}`, flags: '4096' })
             }
         }
         // fetching stuff for update room
@@ -427,15 +396,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 status: 'closed'
             }
         })
-        const fetchOptionsUpdate: RequestInit = {
-            method: 'PATCH', 
-            headers: {
-                'authorization': process.env['UUID_V4'],
-                'user-id': this.interact.user.id,
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify(fetchBodyUpdate) 
-        }
+        const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
         // update room status
         const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
         switch(updateRoomResponse.status) {
@@ -454,11 +415,9 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 // lock the room, auto archive in 1 hour
                 await gameRoom.setLocked(true, 'game over')
                 break
-            case 400:
-                await this.interact.followUp({ content: `${updateRoomResponse.message}`, flags: 'Ephemeral' })
-                break
-            case 500:
-                await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(updateRoomResponse.message)}*`, flags: '4096' })
+            case 400: case 500: default:
+                // follow up
+                this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
                 break
         }
     }
@@ -466,7 +425,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
     // ~~ utility method ~~
     protected async categoryButtonInteraction(i: number) {
         // fetch stuff
-        const fetchOptions: RequestInit = { method: 'GET' }
+        const fetchOptions = this.createFetchOptions('GET')!
         const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
         if(categoryResponse.status === 200) {
             // button stuff
@@ -481,12 +440,11 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     .setLabel(categoryList[i])
                     .setStyle(ButtonStyle.Secondary)
                 // push button to array 
-                if(+i >= 5) {
+                // if array 1 have 5 buttons, move to array 2
+                if(+i >= 5) 
                     categoryButtons[1].push(button)
-                }
-                else {
+                else 
                     categoryButtons[0].push(button)
-                }
             }
             // set button as components
             const categoryRow_1 = new ActionRowBuilder<ButtonBuilder>().addComponents(categoryButtons[0])
@@ -518,7 +476,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
         }
         else {
             // server side 
-            await this.interact.reply({ content: `*server-side error\nerror: ${categoryResponse.message}*`, flags: '4096' })
+            await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
             return null
         }
     }

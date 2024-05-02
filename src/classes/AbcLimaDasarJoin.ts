@@ -32,13 +32,7 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
         // get password if not null
         const password = this.interact.options.get('password')?.value || null
         // fetching stuff
-        const fetchOptions: RequestInit = { 
-            method: 'GET',
-            headers: {
-                'authorization': process.env['UUID_V4'],
-                'user-id': this.interact.user.id
-            },
-        }
+        const fetchOptions = this.createFetchOptions('GET')!
         const joinResponse: IABC_Response_JoinRoom = await this.abcFetcher('/room/join', fetchOptions)
         switch(joinResponse.status) {
             case 200:
@@ -68,15 +62,8 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                         num_players: joinData.num_players + 1
                     }
                 })
-                const fetchOptionsUpdate: RequestInit = {
-                    method: 'PATCH', 
-                    headers: {
-                        'authorization': process.env['UUID_V4'],
-                        'user-id': this.interact.user.id,
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify(fetchBodyUpdate) 
-                }
+                const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
+                // update room number players
                 const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
                 switch(updateRoomResponse.status) {
                     case 200:
@@ -96,22 +83,16 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                         const [editPlayerJoinId, editPlayerJoinCount] = [AbcLimaDasar.playingData.num_players.message_id, AbcLimaDasar.playingData.num_players.count]
                         await gameRoom.messages.cache.get(editPlayerJoinId)?.edit(`**Player join:** ${editPlayerJoinCount} player(s)`)
                         break
-                    case 400:
-                        await this.interact.followUp({ content: `${updateRoomResponse.message}`, flags: 'Ephemeral' })
-                        break
-                    case 500:
-                        await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(updateRoomResponse.message)}*`, flags: '4096' })
+                    case 400: case 500: default:
+                        // follow up
+                        this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
                         break
                 }
                 break
-            case 400:
-                await this.interact.reply({ content: `${joinResponse.message}`, flags: 'Ephemeral' })
+            case 400: case 500: default:
+                // normal reply
+                this.abcFetcherErrors(null, joinResponse.status, joinResponse, false)
                 break
-            case 500:
-                await this.interact.reply({ content: `*server-side error\nerror: ${joinResponse.message}*`, flags: '4096' })
-                break
-            default:
-                await this.interact.reply({ content: `join: unknown error\n${JSON.stringify(joinResponse)}`, flags: '4096' })
         }
     }
 }

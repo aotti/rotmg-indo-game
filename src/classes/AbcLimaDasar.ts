@@ -1,5 +1,5 @@
-import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { FetchBodyType, IABC_Response_Profile, PlayingDataType } from "../lib/types.js";
+import { ChatInputCommandInteraction, EmbedBuilder, ThreadChannel } from "discord.js";
+import { FetchBodyType, IABC_Response, IABC_Response_Profile, PlayingDataType } from "../lib/types.js";
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
@@ -13,7 +13,6 @@ export class AbcLimaDasar {
     protected baseChannel: string
     protected discordAPIUrl: string
     // for collecting required data while playing
-    // ### COBA BUAT STATIC VARIABLE
     protected static playingData: PlayingDataType = {
         room_id: 0,
         round_number: 0,
@@ -38,7 +37,7 @@ export class AbcLimaDasar {
     async profile() {
         // stuff for fetch
         const playerId = this.interact.user.id
-        const fetchOptions: RequestInit = { method: 'GET' }
+        const fetchOptions = this.createFetchOptions('GET')!
         // fetching
         const profileResponse: IABC_Response_Profile = await this.abcFetcher(`/profile/${playerId}`, fetchOptions)
         // create embed
@@ -71,14 +70,10 @@ export class AbcLimaDasar {
                 })
                 await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
                 break
-            case 400:
-                await this.interact.reply({ content: `${profileResponse.message}`, flags: 'Ephemeral' })
+            case 400: case 500: default:
+                // normal reply
+                this.abcFetcherErrors(null, profileResponse.status, profileResponse, false)
                 break
-            case 500:
-                await this.interact.reply({ content: `*server-side error\nerror: ${profileResponse.message}*`, flags: '4096' })
-                break
-            default:
-                await this.interact.reply({ content: `stats: unknown error\n${JSON.stringify(profileResponse)}`, flags: '4096' })
         }
     }
 
@@ -99,6 +94,41 @@ export class AbcLimaDasar {
         }
     }
 
+    protected async abcFetcherErrors(channel: ThreadChannel | null, status: number, response: IABC_Response, replyFollowUp: boolean) {
+        switch(status) {
+            case 400:
+                // when theres error but inside the game room
+                if(channel) {
+                    await channel.send({ content: `${response.message}`, flags: '4096' })
+                }
+                // error on slash command
+                replyFollowUp 
+                    ? await this.interact.followUp({ content: `${response.message}`, flags: 'Ephemeral' })
+                    : await this.interact.reply({ content: `${response.message}`, flags: 'Ephemeral' })
+                break
+            case 500:
+                // when theres error but inside the game room
+                if(channel) {
+                    await channel.send({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                }
+                // error on slash command
+                replyFollowUp
+                    ? await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                    : await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                break
+            default:
+                // when theres error but inside the game room
+                if(channel) {
+                    await channel.send({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                }
+                // error on slash command
+                replyFollowUp
+                    ? await this.interact.followUp({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                    : await this.interact.reply({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                break
+        }
+    }
+
     protected indonesiaDatetime() {
         const d = new Date()
         // utc time
@@ -114,5 +144,30 @@ export class AbcLimaDasar {
 
     protected createFetchBody<T extends FetchBodyType>(data: T) {
         return {...data}
+    }
+
+    protected createFetchOptions(method: string, fetchBody?: {action: string; payload: {} | {}[]}): RequestInit | null {
+        switch(method) {
+            case 'GET':
+                return {
+                    method: method,
+                    headers: {
+                        'authorization': process.env['UUID_V4'],
+                        'user-id': this.interact.user.id
+                    }
+                }
+            case 'POST': case 'PATCH':
+                return {
+                    method: method, 
+                    headers: {
+                        'authorization': process.env['UUID_V4'],
+                        'user-id': this.interact.user.id,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify(fetchBody) 
+                }
+            default:
+                return null
+        }
     }
 }
