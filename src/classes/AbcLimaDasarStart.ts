@@ -165,8 +165,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 const gameStartedInfo = await this.interact.followUp({ content: `**${discordUsername}** started abc 5 dasar game :eyes:`, flags: '4096' })
                 // delete message and lock the room after 30 mins
                 setTimeout(async () => {
-                    gameRoom.setLocked(true, 'no one join')
-                    // update room status
+                    // update room status 
                     // fetching stuff for update room
                     const fetchBodyUpdate = this.createFetchBody({
                         action: 'update room',
@@ -180,15 +179,17 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
                     switch(updateRoomResponse.status) {
                         case 200:
-                            await gameRoom.send({ content: 'game canceled', flags: '4096' })
+                            // lock the room
+                            await gameRoom.setLocked(true, 'no one join')
+                            // delete message
+                            await gameStartedInfo.delete()
                             break
                         case 400: case 500: default:
                             // follow up
                             this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
                             break
                     }
-                    gameStartedInfo.delete()
-                }, 1800_0e3);
+                }, 1800_000);
                 // game is running
                 this.playing(gameRoom)
                 break
