@@ -139,8 +139,9 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 AbcLimaDasar.playingData.num_players.message_id = gamePlayerCountMessage.id
                 // send info about how to play the game
                 const gameHowtoplay = "---------------------------" +
-                                    "\nSend the answer below and **your 1st message is gonna be the answer**" +
-                                    "\nThe game will last for 10 minutes, if there's only 1 player" +
+                                    "\nSend the answer below" +
+                                    "\n## **Your 1st message is gonna be the answer**" +
+                                    "\nThe game will last for 30 minutes, if there's only 1 player" +
                                     "\nafter the times up, the game will be canceled" +
                                     "\n---------------------------" 
                 gameRoom.send(gameHowtoplay)
@@ -226,7 +227,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                         // update player answer status
                         AbcLimaDasar.playingData.player_data[isPlayerJoined].answer_status = true
                         // push answer
-                        tempAnswers.push({ player_id: msg.author.id, answer: msg.content.toLowerCase() })
+                        tempAnswers.push({ player_id: msg.author.id, answer: msg.content.replace('-', ' ').toLowerCase() })
                         // give react to the answer
                         msg.react('608521889945485312')
                         // get answer status
@@ -452,7 +453,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             const categoryRow_2 = new ActionRowBuilder<ButtonBuilder>().addComponents(categoryButtons[1])
             // display button
             const buttonResponse = await this.interact.editReply({
-                content: `Select category ${i}:`,
+                content: `Select category ${i+1}:`,
                 // ### MAX 5 BUTTONS FOR EACH ROW
                 components: [categoryRow_1, categoryRow_2]
             })

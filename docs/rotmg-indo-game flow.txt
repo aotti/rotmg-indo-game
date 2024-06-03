@@ -1,0 +1,58 @@
+									------------	Game ABC 5 Dasar (game bot discord) ------------
+
+# Alur game													# rules game
+1. register akun (user id & username diskod)							.  - 1x game memiliki 3/5 ronde
+2. pilihan game mode hanya public								.  - poin didapat berdasarkan jawaban tercepat dan benar
+3. player yang memulai game bisa menentukan 'rules'					.    * 1st mendapat 10 poin
+4. public:														.    * 2nd mendapat 7 poin
+    - minimal 2 player bermain 										.    * 3rd+ mendapat 5 poin
+    - batas waktu 1 jam sblm game otomatis batal						.  - jika salah menjawab, maka - 2 poin
+    - player langsung mengetik jawaban								.  - jika player dgn jawaban sama
+    - jika waktu habis dan hanya ada 1 player, maka batal				.    * 2 player = 3 poin
+    - jika ada min. 2 orang dan waktu habis, maka lanjut					.    * 3 player = 2 poin
+X. private: (BATAL)												.    * 4 player = 1 poin
+    - minimal 2 player bermain										.  - jika game selesai dan ada player yg memiliki poin sama
+    - batas waktu 1 jam sblm game otomatis batal						.    maka player tsb mendapat urutan yg sama
+    - memilih player untuk mabar									.  - waktu menjawab
+    - hanya player yg ditentukan yg bisa mengetik jawaban				.    * private, 10 - 20 detik
+    - jika waktu habis dan hanya 1 player yg jawab, maka batal			.    * public, tdk ada limit
+
+# API Back-End 												# Daftar Kategori (huruf pengecualian = Q V W X Y Z
+1. POST kata baru ke database									. - makanan 			- alat elektronik		- hewan amfibi ^
+    - hanya string, tidak ada simbol atau angka						. - minuman			- alat olahraga	^		- hewan mamalia ^ ''
+    - hanya admin yg bisa tambah kata								. - bahan memasak		- benda tajam ^		- hewan ikan ^ ''
+    - kata lowercase												. - kendaraan			- benda mainan 		- hewan burung ^ ''
+2. GET kata-kata untuk pengecekan saat bermain						. - benda langit ^ x		- alat segs ^ x			- hewan reptil ^
+															. - organ tubuh ^ ''		- alat geografi			- hewan invertebrata
+# ERD 														. - alat musik ^			- alat fisika			- alat transportasi
+1. setiap player mempunyai profil (history bermain)					. - alat dapur			- alat kimia			- perkakas bangunan
+2. setiap player hanya bisa menjawab dengan 1 kata					. - alat mandi ^	''		- alat biologi			- material bangunan
+3. satu game room bisa mempunyai banyak player					. - alat tulis ^ ''			- infrastruktur			- furnitur ^
+4. setiap 1 game round bisa terdapat banyak kata						. - pakaian			- alat pembayaran ^	- nama negara ^ ''
+															. - nama kota indo ^ 	- nama provinsi indo ^
+
+									------------	Game JANKEN (game bot discord) ------------
+
+# Alur game
+1. hanya 2 player yg bisa bermain
+2. jalankan command /start_janken
+3. pilih jari yang akan dikeluarkan
+4. tunggu orang lain menjalankan command /join_janken
+5. pilih jari yang akan dikeluarkan
+6. bandingkan jari kedua player, lalu tentukan hasil
+7. orang yg sama tidak bisa menjalankan command 2x
+8. game akan selesai jika ada player yg join
+
+# start_janken
+- player_array untuk simpan data player yg sedang bermain
+- push data player 1 ke array
+- struktur data player 
+	{ 
+	   id: id.player, 
+	   username: username.player
+	   finger: input.finger, 
+	   result: win/lose 
+	}
+
+
+
