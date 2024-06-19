@@ -10,49 +10,56 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
 
     // register player method
     async register() {
-        // stuff for fetch
-        const playerId = this.interact.user.id
-        const username = (this.interact.member as any).nickname || this.interact.user.displayName
-        // check id
-        const [idStatus, idError] = this.checkId(playerId)
-        if(idStatus) {
-            return await this.interact.reply({ content: idError as string, flags: 'Ephemeral' })
-        }
-        // check username length
-        const [usernameStatus, usernameError] = this.usernameLength(username)
-        if(usernameStatus) {
-            return await this.interact.reply({ content: usernameError as string, flags: 'Ephemeral' })
-        }
-        // fetch stuff
-        const fetchBody = this.createFetchBody({
-            action: 'register player',
-            payload: {
-                id: playerId,
-                username: username
+        try {
+            // stuff for fetch
+            const playerId = this.interact.user.id
+            const username = (this.interact.member as any).nickname || this.interact.user.displayName
+            // check id
+            const [idStatus, idError] = this.checkId(playerId)
+            if(idStatus) {
+                return await this.interact.reply({ content: idError as string, flags: 'Ephemeral' })
             }
-        })
-        const fetchOptions = this.createFetchOptions('POST', fetchBody)!
-        // fetching
-        const registerResponse: IABC_Response_Register = await this.abcFetcher(`/register/player`, fetchOptions)
-        // create embed
-        const registerEmbed = new EmbedBuilder().setTitle('Player Register')
-        // check status
-        switch(registerResponse.status) {
-            case 200:
-                const playerData = registerResponse.data[0]
-                // fill the embed with player data
-                registerEmbed.setDescription(`
-                    Registration success!
-                    ────────────────────
-                    **id:** ${playerData.id}
-                    **username:** ${playerData.username}
-                `)
-                await this.interact.reply({ embeds: [registerEmbed], flags: 'Ephemeral' })
-                break
-            case 400: case 500: default:
-                // normal reply
-                this.abcFetcherErrors(null, registerResponse.status, registerResponse, false)
-                break
+            // check username length
+            const [usernameStatus, usernameError] = this.usernameLength(username)
+            if(usernameStatus) {
+                return await this.interact.reply({ content: usernameError as string, flags: 'Ephemeral' })
+            }
+            // fetch stuff
+            const fetchBody = this.createFetchBody({
+                action: 'register player',
+                payload: {
+                    id: playerId,
+                    username: username
+                }
+            })
+            const fetchOptions = this.createFetchOptions('POST', fetchBody)!
+            // fetching
+            const registerResponse: IABC_Response_Register = await this.abcFetcher(`/register/player`, fetchOptions)
+            // create embed
+            const registerEmbed = new EmbedBuilder().setTitle('Player Register')
+            // check status
+            switch(registerResponse.status) {
+                case 200:
+                    const playerData = registerResponse.data[0]
+                    // fill the embed with player data
+                    registerEmbed.setDescription(`
+                        Registration success!
+                        ────────────────────
+                        **id:** ${playerData.id}
+                        **username:** ${playerData.username}
+                    `)
+                    await this.interact.reply({ embeds: [registerEmbed], flags: 'Ephemeral' })
+                    break
+                case 400: case 500: default:
+                    // normal reply
+                    await this.abcFetcherErrors(null, registerResponse.status, registerResponse, false)
+                    break
+            }
+        } catch (error: any) {
+            return await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
         }
     }
 

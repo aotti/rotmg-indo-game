@@ -89,175 +89,196 @@ export class Janken {
 
     // play the game
     async battle() {
-        // set player data
-        const jankenPlayer = {
-            id: +this.interact.member!.user.id,
-            username: (this.interact.member as any).nickname || this.interact.user.username,
-            finger: this.interact.options.get('finger')!.value as string,
-            result: null
-        }
-        // check some stuff before start the game
-        const validation = this.validateData(jankenPlayer, 'battle')
-        if(validation.status) {
-            // check player id and game status
-            return await this.interact.reply({ content: validation.errorMessage, ephemeral: true })
-        }
-        // all stuff checked and no error found
-        // check num of players
-        // player = 0
-        if(Janken.playerArray[this.mode].length === 0) {
-            // push player data to array
-            Janken.playerArray[this.mode].push(jankenPlayer);
-            // reply message
-            // for everyone but silent - flags '4096' 
-            await this.interact.reply({ 
-                content: `You choose **${jankenPlayer.finger}** finger`, 
-                flags: "Ephemeral"
-            })
-            // delete ephemeral reply after 3 secs
-            setTimeout(async () => {
-                await this.interact.deleteReply()
-            }, 3000);
-            await this.interact.followUp({ 
-                content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, 
-                flags: '4096' 
-            })
-        }
-        // player = 1
-        else if(Janken.playerArray[this.mode].length === 1) {
-            // push 2nd player to array
-            Janken.playerArray[this.mode].push(jankenPlayer)
-            // compare finger from 1st and 2nd player
-            const compareResult: string[] = this.compareFingers()
-            Janken.playerArray[this.mode].map((v, i) => { v.result = compareResult[i] })
-            // create embed result
-            const embedResult = new EmbedBuilder()
-                .setTitle(`Janken ${this.mode} (aduan jari)`)
-                .setDescription(`game over <:daily_suicid:710973707241390202>\n───────────────────`)
-            for(let player of Janken.playerArray[this.mode]) {
-                const fingerEmoji = this.fingerEmoji(player.finger)
-                embedResult.addFields({
-                    name: `${player.username} (${player.result})`,
-                    value: `Finger: ${player.finger} ${fingerEmoji}`
-                })
-            } 
-            // display result
-            // flags [4096] = silent message
-            await this.interact.reply({ 
-                content: `You choose **${jankenPlayer.finger}** finger`, 
-                flags: "Ephemeral"
-            })
-            // delete ephemeral reply after 3 secs
-            setTimeout(async () => {
-                await this.interact.deleteReply()
-            }, 3000);
-            await this.interact.followUp({ 
-                embeds: [embedResult], 
-                flags: '4096' 
-            })
-            // loop user data 
-            for(let player of Janken.playerArray[this.mode]) {
-                // create queryObject
-                const checkPlayer = this.dq.queryBuilder('janken_players', 2345, 'id', +player.id) as dbSelectType
-                this.dq.selectOne(checkPlayer)
-                    .then(async resultSelect => {
-                        // if theres error on database
-                        if(resultSelect.error !== null) {
-                            return console.log(`err: ${resultSelect.error}`);
-                        }
-                        // data get
-                        else {
-                            // set win/lose value
-                            const [winResult, loseResult] = player.result === 'draw' 
-                                                            ? [0, 0] 
-                                                            : player.result === 'win' 
-                                                                ? [1, 0] 
-                                                                : [0, 1]
-                            // set draw value
-                            const drawResult = (winResult + loseResult) === 0 ? 1 : 0
-                            // check is data empty
-                            if(resultSelect.data?.length === 0) {
-                                // set insert data
-                                const insertData: IUColumnType = {
-                                    id: +player.id,
-                                    username: player.username,
-                                    win: winResult,
-                                    lose: loseResult,
-                                    draw: drawResult
-                                }
-                                // insert player data
-                                const insertPlayer = this.dq.queryBuilder('janken_players', 234, null, null, insertData) as dbInsertType
-                                return this.dq.insert(insertPlayer)
-                                    .then(resultInsert => {
-                                        // re-run register command to update choice values
-                                        // on janken_stats command
-                                        const command = new Commands()
-                                        command.register()
-                                    })
-                                    .catch(err => console.log(`err: ${err}`))
-                            }
-                            // destructure win and lose
-                            const { win, lose, draw } = resultSelect.data![0] as {win: number, lose: number, draw: number}
-                            // update player data
-                            const updateData: IUColumnType = {
-                                username: player.username,
-                                win: win + winResult,
-                                lose: lose + loseResult,
-                                draw: draw + drawResult
-                            }
-                            const updatePlayer = this.dq.queryBuilder('janken_players', 234, 'id', +player.id, null, updateData) as dbUpdateType
-                            return this.dq.update(updatePlayer)
-                                .then(resultUpdate => {
-                                    // re-run register command to update choice values
-                                    // on janken_stats command
-                                    const command = new Commands()
-                                    command.register()
-                                })
-                                .catch(err => console.log(`err: ${err}`))
-                        }
-                    })
-                    .catch(err => console.log(`janken join: ${err}`))
+        try {
+            // set player data
+            const jankenPlayer = {
+                id: +this.interact.member!.user.id,
+                username: (this.interact.member as any).nickname || this.interact.user.username,
+                finger: this.interact.options.get('finger')!.value as string,
+                result: null
             }
-            // reset playerArray
-            Janken.playerArray[this.mode] = []
+            // check some stuff before start the game
+            const validation = this.validateData(jankenPlayer, 'battle')
+            if(validation.status) {
+                // check player id and game status
+                return await this.interact.reply({ content: validation.errorMessage, ephemeral: true })
+            }
+            // all stuff checked and no error found
+            // check num of players
+            // player = 0
+            if(Janken.playerArray[this.mode].length === 0) {
+                // push player data to array
+                Janken.playerArray[this.mode].push(jankenPlayer);
+                // reply message
+                // for everyone but silent - flags '4096' 
+                await this.interact.reply({ 
+                    content: `You choose **${jankenPlayer.finger}** finger`, 
+                    flags: "Ephemeral"
+                })
+                // delete ephemeral reply after 3 secs
+                setTimeout(async () => {
+                    await this.interact.deleteReply()
+                }, 3000);
+                await this.interact.followUp({ 
+                    content: `**${jankenPlayer.username}** waiting a challenger (${this.mode}) :sunglasses:`, 
+                    flags: '4096' 
+                })
+            }
+            // player = 1
+            else if(Janken.playerArray[this.mode].length === 1) {
+                // push 2nd player to array
+                Janken.playerArray[this.mode].push(jankenPlayer)
+                // compare finger from 1st and 2nd player
+                const compareResult: string[] = this.compareFingers()
+                Janken.playerArray[this.mode].map((v, i) => { v.result = compareResult[i] })
+                // create embed result
+                const embedResult = new EmbedBuilder()
+                    .setTitle(`Janken ${this.mode} (aduan jari)`)
+                    .setDescription(`game over <:daily_suicid:710973707241390202>\n───────────────────`)
+                for(let player of Janken.playerArray[this.mode]) {
+                    const fingerEmoji = this.fingerEmoji(player.finger)
+                    embedResult.addFields({
+                        name: `${player.username} (${player.result})`,
+                        value: `Finger: ${player.finger} ${fingerEmoji}`
+                    })
+                } 
+                // display result
+                // flags [4096] = silent message
+                await this.interact.reply({ 
+                    content: `You choose **${jankenPlayer.finger}** finger`, 
+                    flags: "Ephemeral"
+                })
+                // delete ephemeral reply after 3 secs
+                setTimeout(async () => {
+                    await this.interact.deleteReply()
+                }, 3000);
+                await this.interact.followUp({ 
+                    embeds: [embedResult], 
+                    flags: '4096' 
+                })
+                // loop user data 
+                for(let player of Janken.playerArray[this.mode]) {
+                    // create queryObject
+                    const checkPlayerQuery = this.dq.queryBuilder('janken_players', 2345, 'id', +player.id) as dbSelectType
+                    const checkPlayer = await this.dq.selectOne(checkPlayerQuery)
+                    // if theres error on database
+                    if(checkPlayer.error !== null) {
+                        return this.interact.followUp({
+                            content: `err: ${JSON.stringify(checkPlayer.error)}`,
+                            flags: '4096'
+                        });
+                    }
+                    // data get
+                    else {
+                        // set win/lose value
+                        const [winResult, loseResult] = player.result === 'draw' 
+                                                        ? [0, 0] 
+                                                        : player.result === 'win' 
+                                                            ? [1, 0] 
+                                                            : [0, 1]
+                        // set draw value
+                        const drawResult = (winResult + loseResult) === 0 ? 1 : 0
+                        // check is data empty
+                        if(checkPlayer.data?.length === 0) {
+                            // set insert data
+                            const insertData: IUColumnType = {
+                                id: +player.id,
+                                username: player.username,
+                                win: winResult,
+                                lose: loseResult,
+                                draw: drawResult
+                            }
+                            // insert player data
+                            const insertPlayerQuery = this.dq.queryBuilder('janken_players', 234, null, null, insertData) as dbInsertType
+                            const insertPlayer = await this.dq.insert(insertPlayerQuery)
+                            // if error
+                            if(insertPlayer.error) {
+                                return this.interact.followUp({
+                                    content: `err: ${JSON.stringify(insertPlayer.error)}`,
+                                    flags: '4096'
+                                });
+                            }
+                            // re-run register command to update choice values
+                            // on janken_stats command
+                            const command = new Commands()
+                            command.register()
+                        }
+                        // destructure win and lose
+                        const { win, lose, draw } = checkPlayer.data![0] as {win: number, lose: number, draw: number}
+                        // update player data
+                        const updateData: IUColumnType = {
+                            username: player.username,
+                            win: win + winResult,
+                            lose: lose + loseResult,
+                            draw: draw + drawResult
+                        }
+                        const updatePlayerQuery = this.dq.queryBuilder('janken_players', 234, 'id', +player.id, null, updateData) as dbUpdateType
+                        const updatePlayer = await this.dq.update(updatePlayerQuery)
+                        // if error
+                        if(updatePlayer.error) {
+                            return this.interact.followUp({
+                                content: `err: ${JSON.stringify(updatePlayer.error)}`,
+                                flags: '4096'
+                            });
+                        }
+                        // re-run register command to update choice values
+                        // on janken_stats command
+                        const command = new Commands()
+                        command.register()
+                    }
+                }
+                // reset playerArray
+                Janken.playerArray[this.mode] = []
+            }
+        } catch (error: any) {
+            return await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
         }
     }
 
     // get player stats
-    stats() {
-        const playerId: string = this.interact.options.get('player')?.value as string || this.interact.member!.user.id
-        const checkPlayer = this.dq.queryBuilder('janken_players', 2345, 'id', +playerId) as dbSelectType
-        this.dq.selectOne(checkPlayer)
-            .then(resultSelect => {
-                // if user not found
-                if(resultSelect.data?.length === 0) {
-                    return this.interact.reply({ content: `You don't have any record :skull:`, ephemeral: true })
-                }
-                // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
-                // ### TYPE ANY HARUS COBA GANTI DENGAN YG LEBIH SESUAI
-                const { username, win, lose, draw } = resultSelect.data![0] as {username: string, win: number, lose: number, draw: number}
-                const winRate = win / (win + lose + draw) * 100
-                const statsDescription = `**${username}**` +
-                                        `\ngame : ${win + lose + draw}` +
-                                        `\nwin : ${win} (${winRate.toFixed(1)}%)` +
-                                        `\nlose : ${lose}` +
-                                        `\ndraw : ${draw}`
-                const embedStats = new EmbedBuilder()
-                    .setTitle('Janken Player Stats :sunglasses:')
-                    .setDescription(statsDescription)
-                return this.interact.reply({ embeds: [embedStats], ephemeral: true })
-            })
-            .catch(err => console.log(`janken stats: ${err}`))
+    async stats() {
+        try {
+            const playerId: string = this.interact.options.get('player')?.value as string || this.interact.member!.user.id
+            const checkPlayerQuery = this.dq.queryBuilder('janken_players', 2345, 'id', +playerId) as dbSelectType
+            const checkPlayer = await this.dq.selectOne(checkPlayerQuery)
+            // if user not found
+            if(checkPlayer.data?.length === 0) {
+                return this.interact.reply({ content: `You don't have any record :skull:`, ephemeral: true })
+            }
+            // user found
+            const { username, win, lose, draw } = checkPlayer.data![0] as Record<'username'|'win'|'lose'|'draw', number>
+            const winRate = win / (win + lose + draw) * 100
+            const statsDescription = `**${username.toString()}**` +
+                                    `\ngame : ${win + lose + draw}` +
+                                    `\nwin : ${win} (${winRate.toFixed(1)}%)` +
+                                    `\nlose : ${lose}` +
+                                    `\ndraw : ${draw}`
+            const embedStats = new EmbedBuilder()
+                .setTitle('Janken Player Stats :sunglasses:')
+                .setDescription(statsDescription)
+            return this.interact.reply({ embeds: [embedStats], ephemeral: true })
+        } catch (error: any) {
+            return await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
+        }
     }
 
     // get all server members
-    getPlayers() {
-        const queryPlayers = this.dq.queryBuilder('janken_players', 12, 'id', 1) as dbSelectType
-        return this.dq.selectAll(queryPlayers)
-            .then(resultAll => {
-                const allPlayers: any = resultAll.data
-                return allPlayers
-            })
-            .catch(err => console.log(`janken getPlayers: ${err}`))
+    async getPlayers() {
+        try {
+            const queryPlayers = this.dq.queryBuilder('janken_players', 12, 'id', 1) as dbSelectType
+            return (await this.dq.selectAll(queryPlayers)).data!
+        } catch (error: any) {
+            await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
+            return []
+        }
     }
 }

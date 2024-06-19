@@ -7,7 +7,7 @@ import { AbcLimaDasarJoin } from "./AbcLimaDasarJoin.js";
 
 export class Messages {
 
-    async reply(interact: ChatInputCommandInteraction) {
+    reply(interact: ChatInputCommandInteraction) {
         const username = (interact.member as any).nickname || interact.user.username
         // get mode
         const mode = interact.options.get('mode')?.value || ''

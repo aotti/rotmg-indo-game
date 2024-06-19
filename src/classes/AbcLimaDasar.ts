@@ -35,58 +35,64 @@ export class AbcLimaDasar {
     }
     
     async profile() {
-        // stuff for fetch
-        const playerId = this.interact.user.id
-        const fetchOptions = this.createFetchOptions('GET')!
-        // fetching
-        const profileResponse: IABC_Response_Profile = await this.abcFetcher(`/profile/${playerId}`, fetchOptions)
-        // create embed
-        const profileDescription = `**words correct** \n number of words answered correctly
-                                    **words used** \n number of words answered either its right/wrong
-                                    ────────────────────`
-        const profileEmbed = new EmbedBuilder()
-            .setTitle('Player Stats')
-            .setDescription(profileDescription)
-        // check status
-        switch(profileResponse.status) {
-            case 200:
-                const playerData = profileResponse.data[0]
-                // check if data is empty
-                if(playerData == null) {
+        try {
+            // stuff for fetch
+            const playerId = this.interact.user.id
+            const fetchOptions = this.createFetchOptions('GET')!
+            // fetching
+            const profileResponse: IABC_Response_Profile = await this.abcFetcher(`/profile/${playerId}`, fetchOptions)
+            // create embed
+            const profileDescription = `**words correct** \n number of words answered correctly
+                                        **words used** \n number of words answered either its right/wrong
+                                        ────────────────────`
+            const profileEmbed = new EmbedBuilder()
+                .setTitle('Player Stats')
+                .setDescription(profileDescription)
+            // check status
+            switch(profileResponse.status) {
+                case 200:
+                    const playerData = profileResponse.data[0]
+                    // check if data is empty
+                    if(playerData == null) {
+                        profileEmbed.addFields({
+                            name: profileResponse.message as string,
+                            value: 'You have to register to see your profile'
+                        })
+                        await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
+                        break
+                    }
+                    // fill the embed with player data
+                    const profileValue = "`Game Played  :` " + playerData.game_played +
+                                         "\n`Words Correct:` " + playerData.words_correct +
+                                         "\n`Words Used   :` " + playerData.words_used 
                     profileEmbed.addFields({
-                        name: profileResponse.message as string,
-                        value: 'You have to register to see your profile'
+                        name: playerData.username,
+                        value: profileValue
                     })
                     await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
                     break
-                }
-                // fill the embed with player data
-                const profileValue = "`Game Played  :` " + playerData.game_played +
-                                     "\n`Words Correct:` " + playerData.words_correct +
-                                     "\n`Words Used   :` " + playerData.words_used 
-                profileEmbed.addFields({
-                    name: playerData.username,
-                    value: profileValue
-                })
-                await this.interact.reply({ embeds: [profileEmbed], flags: 'Ephemeral' })
-                break
-            case 400: case 500: default:
-                // normal reply
-                this.abcFetcherErrors(null, profileResponse.status, profileResponse, false)
-                break
+                case 400: case 500: default:
+                    // normal reply
+                    await this.abcFetcherErrors(null, profileResponse.status, profileResponse, false)
+                    break
+            }
+        } catch (error: any) {
+            return await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
         }
     }
 
     // ~~ utility method ~~
     protected async abcFetcher(endpoint: string, options: RequestInit) {
-        let fetchResult
         try {
-            return fetchResult = (await fetch(this.baseUrl + endpoint, options)).json()
+            return (await fetch(this.baseUrl + endpoint, options)).json()
         } catch (err: any) {
             console.log(`error AbcLimaDasar abcFetcher`)
             console.log(err)
             // return error object
-            return fetchResult = {
+            return {
                 status: 500,
                 message: err.message,
                 data: []
@@ -95,37 +101,44 @@ export class AbcLimaDasar {
     }
 
     protected async abcFetcherErrors(channel: ThreadChannel | null, status: number, response: IABC_Response, replyFollowUp: boolean) {
-        switch(status) {
-            case 400:
-                // when theres error but inside the game room
-                if(channel) {
-                    await channel.send({ content: `${response.message}`, flags: '4096' })
-                }
-                // error on slash command
-                replyFollowUp 
-                    ? await this.interact.followUp({ content: `${response.message}`, flags: 'Ephemeral' })
-                    : await this.interact.reply({ content: `${response.message}`, flags: 'Ephemeral' })
-                break
-            case 500:
-                // when theres error but inside the game room
-                if(channel) {
-                    await channel.send({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
-                }
-                // error on slash command
-                replyFollowUp
-                    ? await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
-                    : await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
-                break
-            default:
-                // when theres error but inside the game room
-                if(channel) {
-                    await channel.send({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
-                }
-                // error on slash command
-                replyFollowUp
-                    ? await this.interact.followUp({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
-                    : await this.interact.reply({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
-                break
+        try {
+            switch(status) {
+                case 400:
+                    // when theres error but inside the game room
+                    if(channel) {
+                        await channel.send({ content: `${response.message}`, flags: '4096' })
+                    }
+                    // error on slash command
+                    replyFollowUp 
+                        ? await this.interact.followUp({ content: `${response.message}`, flags: 'Ephemeral' })
+                        : await this.interact.reply({ content: `${response.message}`, flags: 'Ephemeral' })
+                    break
+                case 500:
+                    // when theres error but inside the game room
+                    if(channel) {
+                        await channel.send({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                    }
+                    // error on slash command
+                    replyFollowUp
+                        ? await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                        : await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(response.message)}*`, flags: '4096' })
+                    break
+                default:
+                    // when theres error but inside the game room
+                    if(channel) {
+                        await channel.send({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                    }
+                    // error on slash command
+                    replyFollowUp
+                        ? await this.interact.followUp({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                        : await this.interact.reply({ content: `unknown error\n${JSON.stringify(response)}`, flags: '4096' })
+                    break
+            }
+        } catch (error: any) {
+            return await this.interact.followUp({
+                content: `err: ${JSON.stringify(error.message)}`,
+                flags: '4096'
+            });
         }
     }
 
