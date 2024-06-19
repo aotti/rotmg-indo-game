@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { IUColumnType, JankenModeType, JankenPlayerType, dbInsertType, dbSelectType, dbUpdateType } from "../lib/types.js";
 import { DatabaseQueries } from "../lib/DatabaseQueries.js";
 import { Commands } from "./Commands.js";
+import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js";
 
 export class Janken {
     protected static playerArray: JankenModeType = {
@@ -231,10 +232,8 @@ export class Janken {
                 Janken.playerArray[this.mode] = []
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 
@@ -261,10 +260,8 @@ export class Janken {
                 .setDescription(statsDescription)
             return this.interact.reply({ embeds: [embedStats], ephemeral: true })
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 
@@ -274,10 +271,8 @@ export class Janken {
             const queryPlayers = this.dq.queryBuilder('janken_players', 12, 'id', 1) as dbSelectType
             return (await this.dq.selectAll(queryPlayers)).data!
         } catch (error: any) {
-            await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
             return []
         }
     }

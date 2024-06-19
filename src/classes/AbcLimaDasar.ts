@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, EmbedBuilder, ThreadChannel } from "discor
 import { FetchBodyType, IABC_Response, IABC_Response_Profile, PlayingDataType } from "../lib/types.js";
 import { config } from 'dotenv'
 import { resolve } from 'path'
+import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js";
 
 // set the env file
 const envFilePath = resolve(process.cwd(), '.env')
@@ -77,10 +78,8 @@ export class AbcLimaDasar {
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 
@@ -135,10 +134,8 @@ export class AbcLimaDasar {
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 

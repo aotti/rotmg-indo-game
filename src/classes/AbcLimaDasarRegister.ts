@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { AbcLimaDasar } from "./AbcLimaDasar.js";
 import { FetchBodyType, IABC_Response_Register } from "../lib/types.js";
+import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js";
 
 export class AbcLimaDasarRegister extends AbcLimaDasar{
     
@@ -56,10 +57,8 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 

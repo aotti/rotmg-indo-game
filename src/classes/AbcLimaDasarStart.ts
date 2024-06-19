@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ThreadChannel } from "discord.js";
 import { AbcLimaDasar } from "./AbcLimaDasar.js";
 import { IABC_Response_Categories, IABC_Response_CreateRoom, IABC_Response_GetWords, IABC_Response_Rounds, IABC_Response_Profile, IABC_Response_UpdateRoom, Thread_Create_Fail, Thread_Create_Success } from "../lib/types.js";
+import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js";
 
 export class AbcLimaDasarStart extends AbcLimaDasar {
     private categoryAmount: number
@@ -201,10 +202,8 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 
@@ -360,10 +359,8 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 })
             }, 3000);
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 
@@ -438,10 +435,8 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 

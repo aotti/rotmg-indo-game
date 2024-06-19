@@ -9,6 +9,7 @@ declare global {
             ABC_API: string;
             UUID_V4: string;
             ABC_CHANNEL: string;
+            BOTHOOK_URL: string;
         }
     }
   }

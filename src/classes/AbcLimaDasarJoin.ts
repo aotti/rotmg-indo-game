@@ -1,6 +1,7 @@
 import { ThreadChannel } from "discord.js"
 import { AbcLimaDasar } from "./AbcLimaDasar.js"
 import { IABC_Response_JoinRoom, IABC_Response_UpdateRoom } from "../lib/types.js"
+import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js"
 
 export class AbcLimaDasarJoin extends AbcLimaDasar {
 
@@ -96,10 +97,8 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                     break
             }
         } catch (error: any) {
-            return await this.interact.followUp({
-                content: `err: ${JSON.stringify(error.message)}`,
-                flags: '4096'
-            });
+            console.log(error);
+            await WebhookErrorFetch(JSON.stringify(error))
         }
     }
 }
