@@ -79,7 +79,7 @@ export class AbcLimaDasar {
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(this.interact.commandName, error)
         }
     }
 
@@ -135,7 +135,7 @@ export class AbcLimaDasar {
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(`abcFetchErrors`, error)
         }
     }
 

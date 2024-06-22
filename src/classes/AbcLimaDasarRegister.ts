@@ -58,7 +58,7 @@ export class AbcLimaDasarRegister extends AbcLimaDasar{
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(this.interact.commandName, error)
         }
     }
 

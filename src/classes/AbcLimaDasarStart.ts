@@ -203,7 +203,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(`${this.interact.commandName}-start`, error)
         }
     }
 
@@ -360,7 +360,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             }, 3000);
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(`${this.interact.commandName}-playing`, error)
         }
     }
 
@@ -436,7 +436,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(`${this.interact.commandName}-gameOver`, error)
         }
     }
 

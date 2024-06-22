@@ -233,7 +233,7 @@ export class Janken {
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(this.interact.commandName, error)
         }
     }
 
@@ -261,7 +261,7 @@ export class Janken {
             return this.interact.reply({ embeds: [embedStats], ephemeral: true })
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(this.interact.commandName, error)
         }
     }
 
@@ -272,7 +272,7 @@ export class Janken {
             return (await this.dq.selectAll(queryPlayers)).data!
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(JSON.stringify(error))
+            await WebhookErrorFetch(this.interact.commandName, error)
             return []
         }
     }
