@@ -442,37 +442,38 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
 
     // ~~ utility method ~~
     protected async categoryButtonInteraction(i: number) {
-        // fetch stuff
-        const fetchOptions = this.createFetchOptions('GET')!
-        const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
-        if(categoryResponse.status === 200) {
-            // button stuff
-            const categoryButtons = [[], []] as any[][]
-            const categoryList = categoryResponse.data.map(v => v.category)
-            for(let i in categoryList) {
-                // skip none category
-                if(categoryList[i] === 'none') continue
-                // create button
-                const button = new ButtonBuilder()
-                    .setCustomId(categoryList[i])
-                    .setLabel(categoryList[i])
-                    .setStyle(ButtonStyle.Secondary)
-                // push button to array 
-                // if array 1 have 5 buttons, move to array 2
-                if(+i >= 5) 
-                    categoryButtons[1].push(button)
-                else 
-                    categoryButtons[0].push(button)
-            }
-            try {
+        try {
+            // fetch stuff
+            const fetchOptions = this.createFetchOptions('GET')!
+            const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
+            if(categoryResponse.status === 200) {
+                // button stuff
+                const categoryButtons = []
+                let tempCategoryButtons = []
+                const categoryList = categoryResponse.data.map(v => v.category)
+                for(let i in categoryList) {
+                    // skip none category
+                    if(categoryList[i] === 'none') continue
+                    // create button
+                    const button = new ButtonBuilder()
+                        .setCustomId(categoryList[i])
+                        .setLabel(categoryList[i])
+                        .setStyle(ButtonStyle.Secondary)
+                    // push button to array 
+                    tempCategoryButtons.push(button)
+                    // if array 1 have 5 buttons, move to array 2
+                    if(tempCategoryButtons.length === 5 || categoryList.length-1 === +i) {
+                        categoryButtons.push(tempCategoryButtons)
+                        tempCategoryButtons = []
+                    }
+                }
                 // set button as components
-                const categoryRow_1 = new ActionRowBuilder<ButtonBuilder>().addComponents(categoryButtons[0])
-                const categoryRow_2 = new ActionRowBuilder<ButtonBuilder>().addComponents(categoryButtons[1])
+                const categoryRow = createButtonComponents(categoryButtons)
                 // display button
                 const buttonResponse = await this.interact.editReply({
                     content: `Select category ${i+1}:`,
                     // ### MAX 5 BUTTONS FOR EACH ROW
-                    components: [categoryRow_1, categoryRow_2]
+                    components: categoryRow
                 })
                 // button interaction
                 // ensures that only the user who triggered the interaction can use the buttons
@@ -483,19 +484,31 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                 await confirmation.update({ content: `You selected **${confirmation.customId}** category`, components: [] })
                 // return selected category
                 return confirmation.customId
-            } catch (err) {
-                // no button response, cancel the game
-                await this.interact.editReply({
-                    content: 'You only have 20 seconds to select categories :eyes:',
-                    components: []
-                })
+            }
+            else {
+                // server side 
+                await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
                 return null
             }
-        }
-        else {
-            // server side 
-            await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
+        } catch (error: any) {
+            // interact API error
+            if(error.code !== 'InteractionCollectorError') 
+                return await WebhookErrorFetch(this.interact.commandName, error)
+            // no button response, cancel the game
+            await this.interact.editReply({
+                content: 'You only have 20 seconds to select categories :eyes:',
+                components: []
+            })
             return null
+        }
+
+        function createButtonComponents(buttons: ButtonBuilder[][]) {
+            const buttonComponent = []
+            for(let button of buttons) {
+                const newComponent = new ActionRowBuilder<ButtonBuilder>().addComponents(button)
+                buttonComponent.push(newComponent)
+            }
+            return buttonComponent
         }
     }
 }
