@@ -3,6 +3,7 @@ import { config } from 'dotenv'
 import { resolve } from 'path'
 import { Commands } from './classes/Commands.js';
 import { Messages } from './classes/Messages.js';
+import { WebhookErrorFetch } from './lib/WebhookErrorHandler.js';
 
 // set the env file
 const envFilePath = resolve(process.cwd(), '.env')
@@ -32,6 +33,11 @@ bot.on('ready', (b) => {
 bot.on('interactionCreate', async (interact) => {
     // check if user really use slash command
     if(!interact.isChatInputCommand()) return
+    // handle discord API error
+    process.on('unhandledRejection', async (error: any) => {
+        console.log(error);
+        await WebhookErrorFetch(interact.commandName, error)
+    })
     // reply to user who interacted with slash commands
     const messages = new Messages()
     messages.reply(interact)
