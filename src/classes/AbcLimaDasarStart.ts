@@ -2,9 +2,11 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteracti
 import { AbcLimaDasar } from "./AbcLimaDasar.js";
 import { IABC_Response_Categories, IABC_Response_CreateRoom, IABC_Response_GetWords, IABC_Response_Rounds, IABC_Response_Profile, IABC_Response_UpdateRoom, Thread_Create_Fail, Thread_Create_Success } from "../lib/types.js";
 import { WebhookErrorFetch } from "../lib/WebhookErrorHandler.js";
+import { AbcLimaDasarGame } from "./AbcLimaDasarGame.js";
 
 export class AbcLimaDasarStart extends AbcLimaDasar {
     private categoryAmount: number
+    private abcLimaDasarGame = new AbcLimaDasarGame(this.interact)
     
     constructor(interact: ChatInputCommandInteraction, categoryAmount: number) {
         super(interact)
@@ -28,27 +30,16 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             }
             // defer reply
             await this.interact.deferReply({ ephemeral: true })
-            // chosen categories after button interact
-            const chosenCategories = []
-            // loop to get categories
-            for(let i=0; i<this.categoryAmount; i++) {
-                // create buttons and interaction for category
-                const category = await this.categoryButtonInteraction(i)
-                if(category === null) return // fail to create buttons
-                // check if the category is already exist
-                const isCategoryExist = chosenCategories.indexOf(category)
-                // similar category exist
-                if(isCategoryExist !== -1) {
-                    return await this.interact.editReply({ 
-                        content: `You selected the same category :skull:` 
-                    })
-                }
-                // push category
-                chosenCategories.push(category)
-            }
+            // select finger
+            const chosenFingers = await this.fingerButtonInteraction()
+            if(chosenFingers === null) return
+            // create buttons and interaction for category
+            const chosenCategories = await this.categoryRandomSelection(this.categoryAmount)
+            // fail to create buttons
+            if(chosenCategories === null) return 
             // select categories done
             await this.interact.editReply({ 
-                content: `You selected **${chosenCategories.join('** & **')}** categories :sunglasses:\ncreating room... :hourglass:` 
+                content: `You selected **${chosenFingers}** fingers :sunglasses:\ncreating room... :hourglass:` 
             })
             // stuff to insert into abc_rooms
             const gameStartData = {
@@ -136,17 +127,19 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                             `\n**Max player:** ${createData.max_players} players`
                     gameRoom.send(gameCreatedNotice)
                     // send player count
-                    const gamePlayerCount = `**Player join:** ${createData.num_players} player(s)` 
+                    const gamePlayerCount = `**Player join:** ${createData.num_players} player(s) 👀` 
                     const gamePlayerCountMessage = await gameRoom.send(gamePlayerCount)
                     AbcLimaDasar.playingData.num_players.message_id = gamePlayerCountMessage.id
                     // send info about how to play the game
                     const gameHowtoplay = "---------------------------" +
                                         "\nSend the answer below" +
                                         "\n## **Your 1st message is gonna be the answer**" +
-                                        "\nThe game will last for 30 minutes, if there's only 1 player" +
+                                        "\nThe game will last for 10 minutes, if there's only 1 player" +
                                         "\nafter the times up, the game will be canceled" +
+                                        "\n### **all player must react to 🔥 emoji to start the game**" +
                                         "\n---------------------------" 
-                    gameRoom.send(gameHowtoplay)
+                    const gameHowtoplayMsg = await gameRoom.send(gameHowtoplay)
+                    await gameRoom.messages.cache.get(gameHowtoplayMsg.id)?.react('🔥')
                     // update playing data
                     AbcLimaDasar.playingData.room_id = createData.id
                     AbcLimaDasar.playingData.round_number = 1
@@ -166,7 +159,7 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     // send game started for others
                     const discordUsername = (this.interact.member as any).nickname || this.interact.user.displayName
                     const gameStartedInfo = await this.interact.followUp({ content: `**${discordUsername}** started abc 5 dasar game :eyes:`, flags: '4096' })
-                    // delete message and lock the room after 30 mins
+                    // delete message and lock the room after 10 mins
                     setTimeout(async () => {
                         // update room status 
                         // fetching stuff for update room
@@ -192,59 +185,17 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                 await this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
                                 break
                         }
-                    }, 1800_000);
-                    // game is running
-                    this.playing(gameRoom)
-                    break
-                case 400: case 500: default:
-                    // follow up
-                    await this.abcFetcherErrors(null, createRoomResponse.status, createRoomResponse, true)
-                    break
-            }
-        } catch (error: any) {
-            console.log(error);
-            await WebhookErrorFetch(`${this.interact.commandName}-start`, error)
-        }
-    }
-
-    private async playing(gameRoom: ThreadChannel) {
-        try {
-            const tempThis = this
-            // countdown 
-            gameRoom.send('Starting in 3 seconds...')
-            setTimeout(() => {
-                // round number info
-                const gameRoundNumber = `Round ${AbcLimaDasar.playingData.round_number} :fire:` +
-                                        "\n---------------------------"
-                gameRoom.send(gameRoundNumber)
-                // alternative playingData.player_data container  
-                // declare outside listener to prevent data loss when any return fired
-                let tempAnswers: {player_id: string, answer: string}[] = []
-                // listen to user messages 
-                gameRoom.client.on('messageCreate', async function gameAnswersListener(msg) {
-                    // listen only to the game room & ignore msg from bot 
-                    if(msg.channelId !== gameRoom.id || msg.author.bot) return
-                    // check if player exist
-                    const isPlayerJoined = AbcLimaDasar.playingData.player_data.map(v => v.player_id).indexOf(msg.author.id)
-                    // player exist
-                    if(isPlayerJoined !== -1) {
-                        // check if player already answered
-                        const isPlayerAnswered = AbcLimaDasar.playingData.player_data[isPlayerJoined].answer_status
-                        if(isPlayerAnswered === false) {
-                            // update player answer status
-                            AbcLimaDasar.playingData.player_data[isPlayerJoined].answer_status = true
-                            // push answer
-                            tempAnswers.push({ player_id: msg.author.id, answer: msg.content.replace('-', ' ').toLowerCase() })
-                            // give react to the answer
-                            msg.react('608521889945485312')
-                            // get answer status
-                            const playerAnswerStatus = AbcLimaDasar.playingData.player_data.map(v => {
-                                if(v.answer_status === true)
-                                    return v.answer_status 
-                            }).filter(i => i)
-                            // if theres only 1 answer OR answer length < total player joined, stop
-                            if(playerAnswerStatus.length === 1 || playerAnswerStatus.length < AbcLimaDasar.playingData.player_data.length) return 
-        
+                    }, 600_000);
+                    // all player have to react to start the game
+                    let [reactMessage, playerReacts] = [false, 0]
+                    const tempThis = this
+                    gameRoom.client.on('messageReactionAdd', async function gamePrepare(msg) {
+                        // match the message id to prevent react 🔥 anywhere
+                        reactMessage = gameHowtoplayMsg.id === msg.message.id
+                        // count player reacts, -1 due to bot
+                        playerReacts = msg.count! - 1
+                        // start the game if conditions match 
+                        if(reactMessage && playerReacts === 2) {
                             // get words from database
                             const wordsContainer: {id: number; word: string}[] = []
                             for(let category of AbcLimaDasar.playingData.categories) {
@@ -262,253 +213,50 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                                         break
                                 }
                             }
-                            
-                            // game result
-                            const gameResultInfo = []
-                            // loop player answer
-                            for(let player of tempAnswers) {
-                                type CounterReturnType = [number, string, number]
-                                // points container
-                                let [idCounter, correctCounter, pointsCounter]: CounterReturnType = [0, '', 0]
-                                // match the answer
-                                const isCorrect = wordsContainer.map(v => {
-                                    const matching = v.word.split(', ').indexOf(player.answer)
-                                    if(matching !== -1)
-                                        return [v.id, v.word] as [number, string]
-                                }).filter(i=>i)[0]
-                                // match result
-                                if(isCorrect) {
-                                    // word id
-                                    idCounter = isCorrect[0]
-                                    // word answer
-                                    correctCounter = `${player.answer} ✅`
-                                    // point
-                                    pointsCounter = 1
-                                }
-                                else {
-                                    idCounter = 0
-                                    correctCounter = `${player.answer} ❌`
-                                }
-                                // update the playing data
-                                const abc_player = AbcLimaDasar.playingData.player_data.map(v => v.player_id).indexOf(player.player_id)
-                                AbcLimaDasar.playingData.player_data[abc_player].answer_id.push(idCounter)
-                                AbcLimaDasar.playingData.player_data[abc_player].answer_words.push(correctCounter)
-                                AbcLimaDasar.playingData.player_data[abc_player].answer_points += pointsCounter 
-                                // update game result
-                                const answersResult = AbcLimaDasar.playingData.player_data[abc_player].answer_words
-                                const answersPoints = AbcLimaDasar.playingData.player_data[abc_player].answer_points
-                                gameResultInfo.push(`<@${player.player_id}>\n${answersResult.join(' | ')} - ${answersPoints} point(s)`)
-                            }
-                            // reset temp answers each round
-                            tempAnswers = []
-                            // collect all data for bulk insert
-                            const tempRoundsPayload: { [key: string]: string | number }[] = []
-                            // looping playing data 
-                            for(let player_data of AbcLimaDasar.playingData.player_data) {
-                                const round_number = AbcLimaDasar.playingData.round_number
-                                // insert temp payload
-                                tempRoundsPayload.push({
-                                    room_id: AbcLimaDasar.playingData.room_id,
-                                    round_number: AbcLimaDasar.playingData.round_number,
-                                    game_rounds: AbcLimaDasar.playingData.game_rounds,
-                                    player_id: player_data.player_id,
-                                    answer_id: player_data.answer_id[round_number - 1],
-                                    answer_words: player_data.answer_words[round_number - 1],
-                                    answer_points: player_data.answer_points
-                                })
-                            }
-                            // fetching stuff for abc_rounds 
-                            const fetchBodyRounds = tempThis.createFetchBody({
-                                action: 'insert rounds',
-                                // send player_id, room_id, word_id, round_number, game_rounds, answer_points (words_correct)
-                                payload: tempRoundsPayload
-                            })
-                            const fetchOptionsRounds = tempThis.createFetchOptions('POST', fetchBodyRounds)!
-                            // insert data to abc_rounds each round
-                            const roundsResponse: IABC_Response_Rounds = await tempThis.abcFetcher('/round/insert', fetchOptionsRounds)
-                            switch(roundsResponse.status) {
-                                case 200: 
-                                    msg.react('🐱')
-                                    break
-                                case 400: case 500: default:
-                                    // gameroom
-                                    tempThis.abcFetcherErrors(gameRoom, roundsResponse.status, roundsResponse, false)
-                                    break
-                            }
-                            // round number == game rounds, game over
-                            const [round_number, game_rounds] = [AbcLimaDasar.playingData.round_number, AbcLimaDasar.playingData.game_rounds]
-                            if(round_number === game_rounds) {
-                                tempThis.gameOver(gameRoom, gameResultInfo)
-                            }
-                            // next round
-                            else if(round_number < game_rounds) {
-                                // increment round number
-                                AbcLimaDasar.playingData.round_number += 1
-                                // reset answer status
-                                const player_data = AbcLimaDasar.playingData.player_data
-                                for(let player of player_data) {
-                                    player.answer_status = false
-                                }
-                                // turn off listener before start next round
-                                gameRoom.client.off('messageCreate', gameAnswersListener)
-                                // start next round 
-                                tempThis.playing(gameRoom)
-                            }
+                            // game is running
+                            tempThis.abcLimaDasarGame.playing(gameRoom, wordsContainer)
+                            // turn off listener after all player have reacted
+                            gameRoom.client.off('messageReactionAdd', gamePrepare)
                         }
-                    }
-                })
-            }, 3000);
-        } catch (error: any) {
-            console.log(error);
-            await WebhookErrorFetch(`${this.interact.commandName}-playing`, error)
-        }
-    }
-
-    private async gameOver(gameRoom: ThreadChannel, gameResultInfo: string[]) {
-        try {
-            // send game over message
-            const gameOverInfo = `Game Over :pray: \nhere is the result: \n${gameResultInfo.join('\n')}`  
-            const gameOverInfoId = (await gameRoom.send(gameOverInfo)).id
-            // wink emojis for update
-            const winkArray: string[] = []
-            // loop player data
-            for(let player_data of AbcLimaDasar.playingData.player_data) {
-                winkArray.push(':wink:')
-                // fetching stuff
-                const fetchBodyProfile = this.createFetchBody({
-                    action: 'update profile',
-                    payload: {
-                        // player_id, game_played, words_correct, words_used
-                        player_id: player_data.player_id,
-                        game_played: 1,
-                        words_correct: player_data.answer_id.filter(v => v !== 0).length,
-                        words_used: player_data.answer_id.length
-                    }
-                })
-                const fetchOptionsProfile = this.createFetchOptions('PATCH', fetchBodyProfile)!
-                // update player profile
-                const profileResponse: IABC_Response_Profile = await this.abcFetcher('/profile/update', fetchOptionsProfile)
-                switch(profileResponse.status) {
-                    case 200:
-                        // profile updated message
-                        const editGameOverInfo = gameOverInfo + 
-                                                "\n---------------------------" +
-                                                "\nplayer profiles updated " + winkArray.join(' ')
-                        await gameRoom.messages.cache.get(gameOverInfoId)?.edit(editGameOverInfo)
-                        break
-                    case 400: case 500: default:
-                        // gameroom
-                        await this.abcFetcherErrors(gameRoom, profileResponse.status, profileResponse, false)
-                        break
-                }
-            }
-            // fetching stuff for update room
-            const fetchBodyUpdate = this.createFetchBody({
-                action: 'update room',
-                payload: {
-                    id: AbcLimaDasar.playingData.room_id,
-                    status: 'closed'
-                }
-            })
-            const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
-            // update room status
-            const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
-            switch(updateRoomResponse.status) {
-                case 200:
-                    await gameRoom.messages.cache.get(gameOverInfoId)?.react('🚪')
-                    // reset all playind data values
-                    AbcLimaDasar.playingData.room_id = 0
-                    AbcLimaDasar.playingData.round_number = 0
-                    AbcLimaDasar.playingData.game_rounds = 0
-                    AbcLimaDasar.playingData.categories = []
-                    AbcLimaDasar.playingData.num_players.count = 0
-                    AbcLimaDasar.playingData.num_players.message_id = ''
-                    AbcLimaDasar.playingData.max_players = 0
-                    AbcLimaDasar.playingData.game_status = ''
-                    AbcLimaDasar.playingData.player_data = []
-                    // lock the room, auto archive in 1 hour
-                    await gameRoom.setLocked(true, 'game over')
+                    })
                     break
                 case 400: case 500: default:
                     // follow up
-                    await this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
+                    await this.abcFetcherErrors(null, createRoomResponse.status, createRoomResponse, true)
                     break
             }
         } catch (error: any) {
             console.log(error);
-            await WebhookErrorFetch(`${this.interact.commandName}-gameOver`, error)
+            await WebhookErrorFetch(`${this.interact.commandName}-start`, error)
         }
     }
 
     // ~~ utility method ~~
-    protected async categoryButtonInteraction(i: number) {
+    protected async categoryRandomSelection(categoryAmount: number) {
         try {
             // fetch stuff
             const fetchOptions = this.createFetchOptions('GET')!
             const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
             if(categoryResponse.status === 200) {
-                // button stuff
-                const categoryButtons = []
-                let tempCategoryButtons = []
-                const categoryList = categoryResponse.data.map(v => v.category)
-                for(let i in categoryList) {
-                    // skip none category
-                    if(categoryList[i] === 'none') continue
-                    // create button
-                    const button = new ButtonBuilder()
-                        .setCustomId(categoryList[i])
-                        .setLabel(categoryList[i])
-                        .setStyle(ButtonStyle.Secondary)
-                    // push button to array 
-                    tempCategoryButtons.push(button)
-                    // if array 1 have 5 buttons, move to array 2
-                    if(tempCategoryButtons.length === 5 || categoryList.length-1 === +i) {
-                        categoryButtons.push(tempCategoryButtons)
-                        tempCategoryButtons = []
-                    }
+                // category stuff
+                const categorySelected = []
+                const fingerList = categoryResponse.data.map(v => v.category).filter(i => i != 'none')
+                // select random categories
+                for(let i=0; i<categoryAmount; i++) {
+                    const randomCategory = Math.floor(Math.random() * fingerList.length)
+                    categorySelected.push(fingerList.splice(randomCategory, 1)[0])
                 }
-                // set button as components
-                const categoryRow = createButtonComponents(categoryButtons)
-                // display button
-                const buttonResponse = await this.interact.editReply({
-                    content: `Select category ${i+1}:`,
-                    // ### MAX 5 BUTTONS FOR EACH ROW
-                    components: categoryRow
-                })
-                // button interaction
-                // ensures that only the user who triggered the interaction can use the buttons
-                const collectorFilter = (i: any) => i.user.id === this.interact.user.id
-                // waiting player to click a button
-                const confirmation = await buttonResponse.awaitMessageComponent({ filter: collectorFilter, time: 20_000 })
-                // edit message after clicked a button
-                await confirmation.update({ content: `You selected **${confirmation.customId}** category`, components: [] })
-                // return selected category
-                return confirmation.customId
+                return categorySelected
             }
             else {
                 // server side 
-                await this.interact.reply({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
+                await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
                 return null
             }
         } catch (error: any) {
             // interact API error
-            if(error.code !== 'InteractionCollectorError') 
-                return await WebhookErrorFetch(this.interact.commandName, error)
-            // no button response, cancel the game
-            await this.interact.editReply({
-                content: 'You only have 20 seconds to select categories :eyes:',
-                components: []
-            })
+            await WebhookErrorFetch(this.interact.commandName, error)
             return null
-        }
-
-        function createButtonComponents(buttons: ButtonBuilder[][]) {
-            const buttonComponent = []
-            for(let button of buttons) {
-                const newComponent = new ActionRowBuilder<ButtonBuilder>().addComponents(button)
-                buttonComponent.push(newComponent)
-            }
-            return buttonComponent
         }
     }
 }

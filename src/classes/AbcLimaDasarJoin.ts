@@ -31,70 +31,73 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                     flags: 'Ephemeral' 
                 })
             }
+            // defer reply
+            await this.interact.deferReply({ ephemeral: true })
             // get password if not null
             const password = this.interact.options.get('password')?.value || null
             // fetching stuff
             const fetchOptions = this.createFetchOptions('GET')!
             const joinResponse: IABC_Response_JoinRoom = await this.abcFetcher('/room/join', fetchOptions)
-            switch(joinResponse.status) {
-                case 200:
-                    const joinData = joinResponse.data[0]
-                    // password doesnt match
-                    if(joinData.password !== password) {
-                        await this.interact.reply({ 
-                            content: `room password doesnt match! <:saskeh:603658093863370786>`, 
-                            flags: 'Ephemeral' 
-                        })
-                        break
-                    }
-                    // password match, join the room 
-                    const gameRoom = await this.interact.client.channels.fetch(joinData.thread_id) as ThreadChannel
-                    // summon the new player to the room
-                    gameRoom.send(`<@${this.interact.user.id}> joined`)
-                    // reply user with the room link 
+            if(joinResponse.status === 200) {
+                const joinData = joinResponse.data[0]
+                // password doesnt match
+                if(joinData.password !== password) {
                     await this.interact.reply({ 
-                        content: `click this link to join the room :flushed:\n<#${joinData.thread_id}>`, 
+                        content: `room password doesnt match! <:saskeh:603658093863370786>`, 
                         flags: 'Ephemeral' 
                     })
-                    // fetching stuff for update room
-                    const fetchBodyUpdate = this.createFetchBody({
-                        action: 'update room',
-                        payload: {
-                            id: joinData.id,
-                            num_players: joinData.num_players + 1
-                        }
-                    })
-                    const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
-                    // update room number players
-                    const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
-                    switch(updateRoomResponse.status) {
-                        case 200:
-                            const updateData = updateRoomResponse.data[0]
-                            await this.interact.editReply({ content: `click this link to join the room :flushed:\n<#${updateData.thread_id}> :wink:` })
-                            // update playing data
-                            AbcLimaDasar.playingData.num_players.count = joinData.num_players + 1
-                            // insert player data to playing data
-                            AbcLimaDasar.playingData.player_data.push({
-                                player_id: this.interact.user.id,
-                                answer_id: [],
-                                answer_words: [],
-                                answer_points: 0,
-                                answer_status: false
-                            })
-                            // edit player join message
-                            const [editPlayerJoinId, editPlayerJoinCount] = [AbcLimaDasar.playingData.num_players.message_id, AbcLimaDasar.playingData.num_players.count]
-                            await gameRoom.messages.cache.get(editPlayerJoinId)?.edit(`**Player join:** ${editPlayerJoinCount} player(s)`)
-                            break
-                        case 400: case 500: default:
-                            // follow up
-                            await this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
-                            break
+                    return
+                }
+                // select finger
+                const chosenFingers = await this.fingerButtonInteraction()
+                if(chosenFingers === null) return
+                // password match, join the room 
+                const gameRoom = await this.interact.client.channels.fetch(joinData.thread_id) as ThreadChannel
+                // summon the new player to the room
+                gameRoom.send(`<@${this.interact.user.id}> joined`)
+                // reply user with the room link 
+                await this.interact.editReply({ 
+                    content: `click this link to join the room :flushed:\n<#${joinData.thread_id}>`
+                })
+                // fetching stuff for update room
+                const fetchBodyUpdate = this.createFetchBody({
+                    action: 'update room',
+                    payload: {
+                        id: joinData.id,
+                        num_players: joinData.num_players + 1
                     }
-                    break
-                case 400: case 500: default:
-                    // normal reply
-                    await this.abcFetcherErrors(null, joinResponse.status, joinResponse, false)
-                    break
+                })
+                const fetchOptionsUpdate = this.createFetchOptions('PATCH', fetchBodyUpdate)!
+                // update room number players
+                const updateRoomResponse: IABC_Response_UpdateRoom = await this.abcFetcher('/room/update', fetchOptionsUpdate)
+                switch(updateRoomResponse.status) {
+                    case 200:
+                        const updateData = updateRoomResponse.data[0]
+                        // edit message as data updated sign
+                        await this.interact.editReply({ content: `click this link to join the room :flushed:\n<#${updateData.thread_id}> :wink:` })
+                        // update playing data
+                        AbcLimaDasar.playingData.num_players.count = joinData.num_players + 1
+                        // insert player data to playing data
+                        AbcLimaDasar.playingData.player_data.push({
+                            player_id: this.interact.user.id,
+                            answer_id: [],
+                            answer_words: [],
+                            answer_points: 0,
+                            answer_status: false
+                        })
+                        // edit player join message
+                        const [editPlayerJoinId, editPlayerJoinCount] = [AbcLimaDasar.playingData.num_players.message_id, AbcLimaDasar.playingData.num_players.count]
+                        await gameRoom.messages.cache.get(editPlayerJoinId)?.edit(`**Player join:** ${editPlayerJoinCount} player(s) 👀`)
+                        break
+                    default:
+                        // follow up
+                        await this.abcFetcherErrors(null, updateRoomResponse.status, updateRoomResponse, true)
+                        break
+                }
+            }
+            // error
+            else {
+                await this.abcFetcherErrors(null, joinResponse.status, joinResponse, false)
             }
         } catch (error: any) {
             console.log(error);

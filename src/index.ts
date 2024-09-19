@@ -1,4 +1,4 @@
-import { Client, IntentsBitField } from 'discord.js'
+import { Client, IntentsBitField, Partials } from 'discord.js'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 import { Commands } from './classes/Commands.js';
@@ -14,6 +14,7 @@ const bot = new Client({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.GuildMessageReactions,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildMembers
     ]

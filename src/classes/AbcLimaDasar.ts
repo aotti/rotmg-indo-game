@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, ThreadChannel } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, ThreadChannel } from "discord.js";
 import { FetchBodyType, IABC_Response, IABC_Response_Profile, PlayingDataType } from "../lib/types.js";
 import { config } from 'dotenv'
 import { resolve } from 'path'
@@ -19,6 +19,7 @@ export class AbcLimaDasar {
         round_number: 0,
         game_rounds: 0,
         categories: [],
+        finger_total: 0,
         num_players: {
             message_id: '',
             count: 0
@@ -96,6 +97,69 @@ export class AbcLimaDasar {
                 message: err.message,
                 data: []
             }
+        }
+    }
+    
+    protected async fingerButtonInteraction() {
+        try {
+            // button stuff
+            const fingerButtons = []
+            let tempFingerButtons = []
+            const fingerList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+            for(let i in fingerList) {
+                // create button
+                const button = new ButtonBuilder()
+                    .setCustomId(fingerList[i])
+                    .setLabel(fingerList[i])
+                    .setStyle(ButtonStyle.Secondary)
+                // push button to array 
+                tempFingerButtons.push(button)
+                // if array 1 have 5 buttons, move to array 2
+                if(tempFingerButtons.length === 5 || fingerList.length-1 === +i) {
+                    fingerButtons.push(tempFingerButtons)
+                    tempFingerButtons = []
+                }
+            }
+            // set button as components
+            const fingerRow = createButtonComponents(fingerButtons)
+            // display button
+            const buttonResponse = await this.interact.editReply({
+                content: `Select finger:`,
+                // ### MAX 5 BUTTONS FOR EACH ROW
+                components: fingerRow
+            })
+            // button interaction
+            // ensures that only the user who triggered the interaction can use the buttons
+            const collectorFilter = (data: any) => data.user.id === this.interact.user.id
+            // waiting player to click a button
+            const confirmation = await buttonResponse.awaitMessageComponent({ filter: collectorFilter, time: 20_000 })
+            // edit message after clicked a button
+            await confirmation.update({ content: `You selected **${confirmation.customId}** finger`, components: [] })
+            // accumulate fingers
+            AbcLimaDasar.playingData.finger_total += +confirmation.customId
+            // return finger
+            return confirmation.customId
+        } catch (error: any) {
+            // interact API error
+            if(error.code !== 'InteractionCollectorError') {
+                await WebhookErrorFetch(this.interact.commandName, error)
+                return null
+            }
+            // no button response, cancel the game
+            await this.interact.editReply({
+                content: 'You only have 20 seconds to select fingers :eyes:',
+                components: []
+            })
+            return null
+        }
+
+        function createButtonComponents(buttons: ButtonBuilder[][]) {
+            const buttonComponent = []
+            for(let button of buttons) {
+                const newComponent = new ActionRowBuilder<ButtonBuilder>().addComponents(button)
+                buttonComponent.push(newComponent)
+            }
+            return buttonComponent
         }
     }
 

@@ -183,6 +183,7 @@ type PlayingDataType = {
     round_number: number;
     game_rounds: number;
     categories: string[];
+    finger_total: number;
     num_players: {
         message_id: string;
         count: number;
