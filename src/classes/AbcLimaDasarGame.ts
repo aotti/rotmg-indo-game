@@ -166,14 +166,14 @@ export class AbcLimaDasarGame extends AbcLimaDasar {
                             // round number == game rounds, game over
                             const [round_number, game_rounds] = [AbcLimaDasar.playingData.round_number, AbcLimaDasar.playingData.game_rounds]
                             if(round_number === game_rounds) {
-                                // set 3 correct words for education 😎 
-                                const threeWords: string[] = []
-                                for(let i=0; i<3; i++) {
+                                // set 5 correct words for education 😎 
+                                const fiveWords: string[] = []
+                                for(let i=0; i<5; i++) {
                                     const random = Math.floor(Math.random() * matchedWordsContainer.length)
-                                    threeWords.push(matchedWordsContainer[random].word)
+                                    fiveWords.push(matchedWordsContainer.splice(random, 1)[0].word)
                                 }
                                 // close the game
-                                tempThis.gameOver(gameRoom, gameResultInfo, threeWords)
+                                tempThis.gameOver(gameRoom, gameResultInfo, fiveWords)
                             }
                             // next round
                             else if(round_number < game_rounds) {
@@ -199,10 +199,10 @@ export class AbcLimaDasarGame extends AbcLimaDasar {
         }
     }
 
-    private async gameOver(gameRoom: ThreadChannel, gameResultInfo: string[], threeWords: string[]) {
+    private async gameOver(gameRoom: ThreadChannel, gameResultInfo: string[], fiveWords: string[]) {
         try {
             // send game over message
-            const gameOverInfo = `Game Over :pray: \nhere is the result: \n${gameResultInfo.join('\n')} \n***correct answers: ${threeWords.join(', ')}***` 
+            const gameOverInfo = `Game Over :pray: \nhere is the result: \n${gameResultInfo.join('\n')} \n***correct answers:*** *${fiveWords.join(', ')}*` 
             const gameOverInfoId = (await gameRoom.send(gameOverInfo)).id
             // wink emojis for update
             const winkArray: string[] = []

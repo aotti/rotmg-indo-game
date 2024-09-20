@@ -121,7 +121,7 @@ export class AbcLimaDasar {
                 }
             }
             // set button as components
-            const fingerRow = createButtonComponents(fingerButtons)
+            const fingerRow = this.createButtonComponents(fingerButtons)
             // display button
             const buttonResponse = await this.interact.editReply({
                 content: `Select finger:`,
@@ -152,15 +152,15 @@ export class AbcLimaDasar {
             })
             return null
         }
+    }
 
-        function createButtonComponents(buttons: ButtonBuilder[][]) {
-            const buttonComponent = []
-            for(let button of buttons) {
-                const newComponent = new ActionRowBuilder<ButtonBuilder>().addComponents(button)
-                buttonComponent.push(newComponent)
-            }
-            return buttonComponent
+    protected createButtonComponents(buttons: ButtonBuilder[][]) {
+        const buttonComponent = []
+        for(let button of buttons) {
+            const newComponent = new ActionRowBuilder<ButtonBuilder>().addComponents(button)
+            buttonComponent.push(newComponent)
         }
+        return buttonComponent
     }
 
     protected async abcFetcherErrors(channel: ThreadChannel | null, status: number, response: IABC_Response, replyFollowUp: boolean) {

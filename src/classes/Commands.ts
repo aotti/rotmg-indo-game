@@ -87,9 +87,15 @@ export class Commands {
                             ]
                         },
                         {
+                            type: ApplicationCommandOptionType.Boolean,
+                            name: 'category_selection',
+                            description: 'true = player choose the category',
+                            required: true
+                        },
+                        {
                             type: ApplicationCommandOptionType.Integer,
                             name: 'category_amount',
-                            description: 'select how many category you gonna pick',
+                            description: 'how many category you gonna play',
                             required: true,
                             choices: [
                                 { name: '3', value: 3 },

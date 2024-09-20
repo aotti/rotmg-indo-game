@@ -42,9 +42,8 @@ export class AbcLimaDasarJoin extends AbcLimaDasar {
                 const joinData = joinResponse.data[0]
                 // password doesnt match
                 if(joinData.password !== password) {
-                    await this.interact.reply({ 
-                        content: `room password doesnt match! <:saskeh:603658093863370786>`, 
-                        flags: 'Ephemeral' 
+                    await this.interact.editReply({ 
+                        content: `room password doesnt match! <:saskeh:603658093863370786>`
                     })
                     return
                 }

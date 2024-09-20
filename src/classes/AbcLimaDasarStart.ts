@@ -33,19 +33,55 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
             // select finger
             const chosenFingers = await this.fingerButtonInteraction()
             if(chosenFingers === null) return
-            // create buttons and interaction for category
-            const chosenCategories = await this.categoryRandomSelection(this.categoryAmount)
-            // fail to create buttons
-            if(chosenCategories === null) return 
+            // category selection
+            const categorySelection = this.interact.options.get('category_selection')?.value
+            let chosenCategories: string[] = []
+            // player gonna pick the categories
+            if(categorySelection) {
+                // fetch stuff
+                const fetchOptions = this.createFetchOptions('GET')!
+                const categoryResponse: IABC_Response_Categories = await this.abcFetcher('/word/categories', fetchOptions)
+                if(categoryResponse.status === 200) {
+                    for(let i=0; i<this.categoryAmount; i++) {
+                        // create buttons and interaction for category
+                        const pickCategory = await this.categoryButtonInteraction(categoryResponse.data, i)
+                        // fail to create buttons
+                        if(pickCategory === null) return
+                        // remove selected category from selection
+                        const removeCategory = categoryResponse.data.map(v => v.category).indexOf(pickCategory)
+                        if(removeCategory !== -1) {
+                            // category removed
+                            categoryResponse.data.splice(removeCategory, 1)
+                            // push category to chosen categories
+                            chosenCategories.push(pickCategory)
+                        }
+                        else {
+                            return await this.interact.editReply({ content: `fail to remove category selection 💀` })
+                        } 
+                    }
+                }
+                else {
+                    // server side 
+                    return await this.interact.followUp({ content: `*server-side error\nerror: ${JSON.stringify(categoryResponse.message)}*`, flags: '4096' })
+                }
+            }
+            // bot gonna pick random categories
+            else {
+                // random pick for category
+                chosenCategories = await this.categoryRandomSelection(this.categoryAmount) as string[]
+                // fail get categories
+                if(chosenCategories === null) return 
+            }
             // select categories done
             await this.interact.editReply({ 
-                content: `You selected **${chosenFingers}** fingers :sunglasses:\ncreating room... :hourglass:` 
+                content: `You selected **${chosenFingers}** fingers and **${chosenCategories.length}** categories :sunglasses:\ncreating room... :hourglass:` 
             })
             // stuff to insert into abc_rooms
+            const roomPassword = this.interact.options.get('room_password')?.value as string || null
             const gameStartData = {
                 // id, name, password, num_players, max_players, rules, status
                 name: this.interact.options.get('room_name')?.value as string,
-                password: this.interact.options.get('room_password')?.value as string || null,
+                password: roomPassword,
                 num_players: 1, // should be only 1 if game just started
                 max_players: this.interact.options.get('max_players')?.value as number,
                 rules: `categories=${chosenCategories.join(',')};game_rounds=${this.interact.options.get('game_rounds')?.value}`,
@@ -158,7 +194,9 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
                     })
                     // send game started for others
                     const discordUsername = (this.interact.member as any).nickname || this.interact.user.displayName
-                    const gameStartedInfo = await this.interact.followUp({ content: `**${discordUsername}** started abc 5 dasar game :eyes:`, flags: '4096' })
+                    const gameStartedInfo = await this.interact.followUp({ 
+                        content: `**${discordUsername}** started abc 5 dasar game ${roomPassword ? '🔒' : '👀'}`, flags: '4096' 
+                    })
                     // delete message and lock the room after 10 mins
                     setTimeout(async () => {
                         // update room status 
@@ -232,6 +270,60 @@ export class AbcLimaDasarStart extends AbcLimaDasar {
     }
 
     // ~~ utility method ~~
+    protected async categoryButtonInteraction(categoryResponseData: IABC_Response_Categories['data'], num: number) {
+        try {
+            // button stuff
+            const categoryButtons = []
+            let tempCategoryButtons = []
+            const categoryList = categoryResponseData.map(v => v.category)
+            for(let i in categoryList) {
+                // skip none category
+                if(categoryList[i] === 'none') continue
+                // create button
+                const button = new ButtonBuilder()
+                    .setCustomId(categoryList[i])
+                    .setLabel(categoryList[i])
+                    .setStyle(ButtonStyle.Secondary)
+                // push button to array 
+                tempCategoryButtons.push(button)
+                // if array 1 have 5 buttons, move to array 2
+                if(tempCategoryButtons.length === 5 || categoryList.length-1 === +i) {
+                    categoryButtons.push(tempCategoryButtons)
+                    tempCategoryButtons = []
+                }
+            }
+            // set button as components
+            const categoryRow = this.createButtonComponents(categoryButtons)
+            // display button
+            const buttonResponse = await this.interact.editReply({
+                content: `Select category ${num+1}:`,
+                // ### MAX 5 BUTTONS FOR EACH ROW
+                components: categoryRow
+            })
+            // button interaction
+            // ensures that only the user who triggered the interaction can use the buttons
+            const collectorFilter = (i: any) => i.user.id === this.interact.user.id
+            // waiting player to click a button
+            const confirmation = await buttonResponse.awaitMessageComponent({ filter: collectorFilter, time: 20_000 })
+            // edit message after clicked a button
+            await confirmation.update({ content: `You selected **${confirmation.customId}** category`, components: [] })
+            // return selected category
+            return confirmation.customId
+        } catch (error: any) {
+            // interact API error
+            if(error.code !== 'InteractionCollectorError') {
+                await WebhookErrorFetch(this.interact.commandName, error)
+                return null
+            }
+            // no button response, cancel the game
+            await this.interact.editReply({
+                content: 'You only have 20 seconds to select categories :eyes:',
+                components: []
+            })
+            return null
+        }
+    }
+
     protected async categoryRandomSelection(categoryAmount: number) {
         try {
             // fetch stuff
